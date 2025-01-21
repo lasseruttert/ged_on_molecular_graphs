@@ -3,6 +3,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import time as t
 from collections import deque
+import random as r
+import numpy as np
 
 basetime = t.time()
 
@@ -72,11 +74,47 @@ def create_neighborhood_tree(graph, root):
                 visited.add(neighbor)
     return tree
 
-def create_nt_list(graph):
-    nt_list = []
-    for node in graph.nodes:
-        nt_list.append(create_neighborhood_tree(graph, node))
-    return nt_list
+def BUILDNT(graph, root, height, k):
+    tree = nx.Graph()
+    tree.add_node(root, label=graph.nodes[root]["label"])
+    D = {}
+    D[root] = 0
+    for i in range(1, height):
+        F = {}
+        for v in list(tree.nodes):
+            for u in graph.neighbors(v):
+                if u not in D:
+                    D[u] = i
+                if D[u] + k >= i:
+                    tree.add_node(u, label=graph.nodes[u]["label"])
+                    tree.add_edge(v, u)
+                    F[u] = 1
+    return tree
 
-def SDTED(graph1, graph2):
-    return nx.graph_edit_distance(graph1, graph2)
+def SDTED(nt1, nt2):
+    if nt1 != nt2:
+        return 1
+    else:
+        return 0
+
+
+def new_SDTED(tree1, tree2):
+    return 0
+
+def calculate_GED(graph1, graph2):
+
+    # get the neighborhood trees
+    nt1 = BUILDNT(graph1, list(graph1.nodes)[0], 10, 1)
+    nt2 = BUILDNT(graph2, list(graph2.nodes)[0], 10, 1)
+    # get the GED
+    return SDTED(nt1, nt2)
+
+def calculate_cost_matrix(graphs):
+    cost_matrix = [[0 for i in range(len(graphs))] for j in range(len(graphs))]
+    for i in range(len(graphs)):
+        for j in range(len(graphs)):
+            cost_matrix[i][j] = calculate_GED(graphs[i+1], graphs[j+1])
+    return np.matrix(cost_matrix)
+
+
+print(calculate_cost_matrix(graphs))
