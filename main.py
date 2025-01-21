@@ -5,6 +5,7 @@ import time as t
 from collections import deque
 import random as r
 import numpy as np
+from scipy.optimize import linear_sum_assignment
 
 basetime = t.time()
 
@@ -99,7 +100,102 @@ def SDTED(nt1, nt2):
 
 
 def new_SDTED(tree1, tree2):
-    return 0
+    
+    def PAD(tree, number):
+        # give the root of the tree children until it has number children
+        root = list(tree.nodes)[0]
+        # get the maximum node id
+        new_node = max(list(tree.nodes)) + 1
+
+        while tree.degree[root] < number:
+            tree.add_node(new_node, label = "PAD")
+            tree.add_edge(root, new_node)
+            new_node += 1
+
+        return tree
+    
+    def recusive_SDTED(tree1, tree2):
+        # n is the maximum number of children of the root of the two trees
+        n = max(tree1.degree[list(tree1.nodes)[0]], tree2.degree[list(tree2.nodes)[0]])
+        
+        # add undefined nodes to the trees
+
+        # print(list(tree1.neighbors(list(tree1.nodes)[0])))
+        # print(list(tree2.neighbors(list(tree2.nodes)[0])))
+
+        # print(n)
+        # print(tree1.nodes)
+        # print(tree2.nodes)
+        tree1 = PAD(tree1, n)
+        tree2 = PAD(tree2, n)
+
+        # print(tree1.nodes)
+        # print(tree2.nodes)
+        # create the cost matrix as n x n matrix
+        cost_matrix = np.zeros((n, n))
+
+        # fill the cost matrix
+
+        for i in range(n):
+            for j in range(n):
+                # get the i-th child of the root of tree1 and the j-th child of the root of tree2
+                child1_ident = list(tree1.neighbors(list(tree1.nodes)[0]))[i]
+                child2_ident = list(tree2.neighbors(list(tree2.nodes)[0]))[j]
+                # those variables are only ints, i need the nodes
+                child1 = tree1.nodes[child1_ident]
+                child2 = tree2.nodes[child2_ident]
+
+
+                if child1["label"] != "PAD" or child2["label"] != "PAD":
+                    if child1["label"] != "PAD" and child2["label"] == "PAD":
+                        cost_matrix[i][j] = 1
+                    elif child2["label"] != "PAD" and child1["label"] == "PAD":
+                        cost_matrix[i][j] = 1
+                    else:
+                        # calculate the SDTED of the trees induced by the children
+                        # create a duplicate of tree1 
+                        tree1_copy = tree1.copy()
+                        tree1_copy.remove_node(list(tree1_copy.nodes)[0])
+                        # remove all children of the root that are not the i-th child
+                        for child in list(tree1.neighbors(list(tree1.nodes)[0])):
+                            if child != child1_ident:
+                                tree1_copy.remove_node(child)
+
+                        # create a duplicate of tree2
+                        tree2_copy = tree2.copy()
+                        tree2_copy.remove_node(list(tree2_copy.nodes)[0])
+                        # remove all children of the root that are not the j-th child
+                        for child in list(tree2.neighbors(list(tree2.nodes)[0])):
+                            if child != child2_ident:
+                                tree2_copy.remove_node(child)
+                        cost_matrix[i][j] = recusive_SDTED(tree1_copy, tree2_copy)
+
+        # calculate the cost of the roots
+        cost_root = 1
+        if tree1.nodes[list(tree1.nodes)[0]]["label"] == tree2.nodes[list(tree2.nodes)[0]]["label"]:
+            cost_root = 0
+
+        # print("cost matrix")
+        # print(cost_matrix)
+        # print("root labels")
+        # print(tree1.nodes[list(tree1.nodes)[0]]["label"])
+        # print(tree2.nodes[list(tree2.nodes)[0]]["label"])
+        # print("cost root")
+        # print(cost_root)
+
+        # calculate the cost of the optimal alignment
+        cost = 0
+        for i in range(n):
+            min_cost = float("inf")
+            for j in range(n):
+                if cost_matrix[i][j] < min_cost:
+                    min_cost = cost_matrix[i][j]
+            cost += min_cost
+
+        return cost + cost_root
+
+    
+    return recusive_SDTED(tree1, tree2)
 
 def calculate_GED(graph1, graph2):
 
@@ -108,7 +204,8 @@ def calculate_GED(graph1, graph2):
         for node2 in graph2.nodes:
             nt1 = create_neighborhood_tree(graph1, node1)
             nt2 = create_neighborhood_tree(graph2, node2)
-            GED = SDTED(nt1, nt2)
+            GED = new_SDTED(nt1, nt2)
+
             if GED < min_GED:
                 min_GED = GED
 
@@ -118,14 +215,28 @@ def calculate_GED(graph1, graph2):
 def calculate_cost_matrix(graphs):
     cost_matrix = [[0 for i in range(len(graphs))] for j in range(len(graphs))]
     for i in range(len(graphs)):
-        for j in range(len(graphs)):
+        for j in range(i,len(graphs)):
             cost_matrix[i][j] = calculate_GED(graphs[i+1], graphs[j+1])
             print(t.time() - basetime)
+
+    for i in range(len(graphs)):
+        for j in range(i+1,len(graphs)):  # Skip the diagonal
+            cost_matrix[j][i] = cost_matrix[i][j]
 
     return np.matrix(cost_matrix)
 
 
 # print(calculate_cost_matrix(graphs))
 
-# now only for the first 10 graphs
-print(calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}))
+print(calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:3]}))
+
+nt1 = create_neighborhood_tree(graphs[1], list(graphs[1].nodes)[0])
+nt2 = create_neighborhood_tree(graphs[2], list(graphs[2].nodes)[0])
+
+
+
+print(new_SDTED(nt1, nt1))
+print(new_SDTED(nt1, nt2))
+
+
+
