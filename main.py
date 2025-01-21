@@ -68,7 +68,7 @@ def create_neighborhood_tree(graph, root):
         current_node = queue.popleft()
         for neighbor in graph.neighbors(current_node):
             tree.add_node(neighbor, label= graph.nodes[neighbor]["label"])
-            tree.add_edge(current_node, neighbor)
+            tree.add_edge(current_node, neighbor, label=graph.edges[current_node, neighbor]["label"])
 
             if neighbor not in visited:
                 queue.append(neighbor)
@@ -120,17 +120,9 @@ def new_SDTED(tree1, tree2):
         
         # add undefined nodes to the trees
 
-        # print(list(tree1.neighbors(list(tree1.nodes)[0])))
-        # print(list(tree2.neighbors(list(tree2.nodes)[0])))
-
-        # print(n)
-        # print(tree1.nodes)
-        # print(tree2.nodes)
         tree1 = PAD(tree1, n)
         tree2 = PAD(tree2, n)
 
-        # print(tree1.nodes)
-        # print(tree2.nodes)
         # create the cost matrix as n x n matrix
         cost_matrix = np.zeros((n, n))
 
@@ -148,9 +140,9 @@ def new_SDTED(tree1, tree2):
 
                 if child1["label"] != "PAD" or child2["label"] != "PAD":
                     if child1["label"] != "PAD" and child2["label"] == "PAD":
-                        cost_matrix[i][j] = 1
+                        cost_matrix[i][j] = 2
                     elif child2["label"] != "PAD" and child1["label"] == "PAD":
-                        cost_matrix[i][j] = 1
+                        cost_matrix[i][j] = 2
                     else:
                         # calculate the SDTED of the trees induced by the children
                         # create a duplicate of tree1 
@@ -168,20 +160,23 @@ def new_SDTED(tree1, tree2):
                         for child in list(tree2.neighbors(list(tree2.nodes)[0])):
                             if child != child2_ident:
                                 tree2_copy.remove_node(child)
-                        cost_matrix[i][j] = recusive_SDTED(tree1_copy, tree2_copy)
+
+                        # add the cost to change the label of the edges
+                        # get the label of the edges
+                        edge1 = tree1.edges[list(tree1.nodes)[0], child1_ident]["label"]
+                        edge2 = tree2.edges[list(tree2.nodes)[0], child2_ident]["label"]
+
+                        if edge1 != edge2:
+                            temp_cost = 1
+                        else:
+                            temp_cost = 0
+
+                        cost_matrix[i][j] = recusive_SDTED(tree1_copy, tree2_copy) + temp_cost
 
         # calculate the cost of the roots
         cost_root = 1
         if tree1.nodes[list(tree1.nodes)[0]]["label"] == tree2.nodes[list(tree2.nodes)[0]]["label"]:
             cost_root = 0
-
-        # print("cost matrix")
-        # print(cost_matrix)
-        # print("root labels")
-        # print(tree1.nodes[list(tree1.nodes)[0]]["label"])
-        # print(tree2.nodes[list(tree2.nodes)[0]]["label"])
-        # print("cost root")
-        # print(cost_root)
 
         # calculate the cost of the optimal alignment
         cost = 0
@@ -213,7 +208,7 @@ def calculate_GED(graph1, graph2):
             
 
 def calculate_cost_matrix(graphs):
-    cost_matrix = [[0 for i in range(len(graphs))] for j in range(len(graphs))]
+    cost_matrix = [["#" for i in range(len(graphs))] for j in range(len(graphs))]
     for i in range(len(graphs)):
         for j in range(i,len(graphs)):
             cost_matrix[i][j] = calculate_GED(graphs[i+1], graphs[j+1])
@@ -228,15 +223,14 @@ def calculate_cost_matrix(graphs):
 
 # print(calculate_cost_matrix(graphs))
 
-print(calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:3]}))
+print(calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}))
 
-nt1 = create_neighborhood_tree(graphs[1], list(graphs[1].nodes)[0])
-nt2 = create_neighborhood_tree(graphs[2], list(graphs[2].nodes)[0])
+# nt1 = create_neighborhood_tree(graphs[1], list(graphs[1].nodes)[0])
+# nt2 = create_neighborhood_tree(graphs[2], list(graphs[2].nodes)[0])
 
 
-
-print(new_SDTED(nt1, nt1))
-print(new_SDTED(nt1, nt2))
+# print(new_SDTED(nt1, nt1))
+# print(new_SDTED(nt1, nt2))
 
 
 
