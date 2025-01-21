@@ -103,18 +103,29 @@ def new_SDTED(tree1, tree2):
 
 def calculate_GED(graph1, graph2):
 
-    # get the neighborhood trees
-    nt1 = BUILDNT(graph1, list(graph1.nodes)[0], 10, 1)
-    nt2 = BUILDNT(graph2, list(graph2.nodes)[0], 10, 1)
-    # get the GED
-    return SDTED(nt1, nt2)
+    min_GED = float("inf")
+    for node1 in graph1.nodes:
+        for node2 in graph2.nodes:
+            nt1 = create_neighborhood_tree(graph1, node1)
+            nt2 = create_neighborhood_tree(graph2, node2)
+            GED = SDTED(nt1, nt2)
+            if GED < min_GED:
+                min_GED = GED
+
+    return min_GED
+            
 
 def calculate_cost_matrix(graphs):
     cost_matrix = [[0 for i in range(len(graphs))] for j in range(len(graphs))]
     for i in range(len(graphs)):
         for j in range(len(graphs)):
             cost_matrix[i][j] = calculate_GED(graphs[i+1], graphs[j+1])
+            print(t.time() - basetime)
+
     return np.matrix(cost_matrix)
 
 
-print(calculate_cost_matrix(graphs))
+# print(calculate_cost_matrix(graphs))
+
+# now only for the first 10 graphs
+print(calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}))
