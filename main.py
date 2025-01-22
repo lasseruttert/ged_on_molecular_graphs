@@ -199,7 +199,11 @@ def calculate_GED(graph1, graph2):
         for node2 in graph2.nodes:
             nt1 = create_neighborhood_tree(graph1, node1)
             nt2 = create_neighborhood_tree(graph2, node2)
-            GED = new_SDTED(nt1, nt2)
+            diff_nodes = abs(len(nt1.nodes) - len(nt2.nodes))
+            if diff_nodes/2 > min_GED:
+                continue
+            else:
+                GED = new_SDTED(nt1, nt2)
 
             if GED < min_GED:
                 min_GED = GED
