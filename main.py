@@ -94,14 +94,8 @@ def BUILDNT(graph, root, height, k):
                     F[u] = 1
     return tree
 
-def SDTED(nt1, nt2):
-    if nt1 != nt2:
-        return 1
-    else:
-        return 0
 
-
-def new_SDTED(tree1, tree2):
+def SDTED(tree1, tree2):
     
     def PAD(tree, number):
         # give the root of the tree children until it has number children
@@ -208,14 +202,10 @@ def new_SDTED(tree1, tree2):
 #             if diff_nodes/2 > min_GED:
 #                 continue
 #             else:
-#                 GED = new_SDTED(nt1, nt2)
-
+#                 GED = SDTED(nt1, nt2)
 #             if GED < min_GED:
 #                 min_GED = GED
-            
 #             print("Time to compute one GED for NT-Root Nodes " + str(node1) +" and " + str(node2) +": " + str(t.time() - basetime))
-            
-
 #     return min_GED
 
 def calculate_GED(graph1, graph2, nt_dict):
@@ -233,7 +223,7 @@ def calculate_GED(graph1, graph2, nt_dict):
             if diff_edges >= min_GED:
                 continue
             else:
-                GED = new_SDTED(nt1, nt2)
+                GED = SDTED(nt1, nt2)
 
             if GED < min_GED:
                 min_GED = GED
