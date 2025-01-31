@@ -130,6 +130,32 @@ class TestMain(unittest.TestCase):
 
         npt.assert_array_equal(expected_output, test_output)
 
+    def test_5(self):
+        # two graphs: one with 1 node, one with 3 nodes in a line
+
+        graph1 = nx.Graph()
+        graph1.graph["id"] = 1
+        graph1.add_node(1, label="A")
+
+        graph2 = nx.Graph()
+        graph2.graph["id"] = 2
+        graph2.add_node(1, label="A")
+        graph2.add_node(2, label="B")
+        graph2.add_node(3, label="C")
+
+        graph2.add_edge(1, 2, label="a")
+        graph2.add_edge(2, 3, label="b")
+
+        test_graphs = {}
+
+        test_graphs[1] = graph1
+        test_graphs[2] = graph2
+
+        expected_output = np.matrix([[0, 4], [4, 0]])
+        test_output = main.calculate_cost_matrix(test_graphs)
+
+        npt.assert_array_equal(expected_output, test_output)
+
 
 if __name__ == '__main__':
     unittest.main()

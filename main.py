@@ -7,58 +7,6 @@ import random as r
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 
-basetime = t.time()
-
-# Pfad zu den Dateien
-path = "G:\Meine Ablage\PG\ged_on_molecular_graphs\data\MUTAG"
-dataset_name = "MUTAG"
-
-# Lade Adjacency-Matrix
-edges = pd.read_csv(f"{path}\{dataset_name}_A.txt", header=None, sep=",")
-edges.columns = ["source", "target"]
-
-
-# Lade Knoten-zu-Graph-Zuordnung
-node_to_graph = pd.read_csv(f"{path}\{dataset_name}_graph_indicator.txt", header=None)
-node_to_graph.columns = ["graph_id"]
-
-
-# Lade Graph-Labels
-graph_labels = pd.read_csv(f"{path}\{dataset_name}_graph_labels.txt", header=None)
-graph_labels.columns = ["label"]
-
-
-# Lade Knoten-Labels
-node_labels = pd.read_csv(f"{path}\{dataset_name}_node_labels.txt", header=None)
-node_labels.columns = ["label"]
-
-# Lade Kanten-Labels
-edge_labels = pd.read_csv(f"{path}\{dataset_name}_edge_labels.txt", header=None)
-edge_labels.columns = ["label"]
-
-# Erstelle die Graphen
-graphs = {}
-for graph_id in node_to_graph["graph_id"].unique():
-    graph_nodes = node_to_graph[node_to_graph["graph_id"] == graph_id].index + 1
-    subgraph_edges = edges[edges["source"].isin(graph_nodes) & edges["target"].isin(graph_nodes)]
-    graphs[graph_id] = nx.from_pandas_edgelist(subgraph_edges, source="source", target="target")
-    graphs[graph_id].graph["label"] = graph_labels.loc[graph_id - 1, "label"]
-    # gib jeden Graphen eine ID
-    graphs[graph_id].graph["id"] = graph_id
-
-    # Füge Knoten-Labels hinzu
-    for node in graph_nodes:
-        graphs[graph_id].nodes[node]["label"] = node_labels.loc[node - 1, "label"]
-
-    # Füge Kanten-Labels hinzu
-    for _, row in subgraph_edges.iterrows():
-        source, target = row["source"], row["target"]
-        edge_label = edge_labels.loc[edges[(edges["source"] == source) & (edges["target"] == target)].index[0], "label"]
-        graphs[graph_id].edges[source, target]["label"] = edge_label
-        graphs[graph_id].edges[target, source]["label"] = edge_label  # Ungerichtete Kante (symmetrisch)
-
-print(t.time() - basetime)
-
 def BUILDNT(graph, root, height, k):
     tree = nx.Graph()
     tree.add_node(root, label=graph.nodes[root]["label"], height=0)
@@ -163,22 +111,22 @@ def SDTED(tree1, tree2, subgraph_dict1, subgraph_dict2):
                         cost_matrix[i][j] = tree2_padded.nodes[child2_ident]["cost"] + 1
                     else:
                         # calculate the SDTED of the trees induced by the children
-                        # create a duplicate of tree1
-                        tree1_copy = tree1_padded.copy()
-                        tree1_copy.remove_node(list(tree1_copy.nodes)[0])
-                        # remove all children of the root that are not the i-th child
-                        for child in children1:
-                            if child != child1_ident:
-                                tree1_copy.remove_node(child)
+                        # # create a duplicate of tree1
+                        # tree1_copy = tree1_padded.copy()
+                        # tree1_copy.remove_node(list(tree1_copy.nodes)[0])
+                        # # remove all children of the root that are not the i-th child
+                        # for child in children1:
+                        #     if child != child1_ident:
+                        #         tree1_copy.remove_node(child)
 
 
-                        # create a duplicate of tree2
-                        tree2_copy = tree2_padded.copy()
-                        tree2_copy.remove_node(list(tree2_copy.nodes)[0])
-                        # remove all children of the root that are not the j-th child
-                        for child in children2:
-                            if child != child2_ident:
-                                tree2_copy.remove_node(child)
+                        # # create a duplicate of tree2
+                        # tree2_copy = tree2_padded.copy()
+                        # tree2_copy.remove_node(list(tree2_copy.nodes)[0])
+                        # # remove all children of the root that are not the j-th child
+                        # for child in children2:
+                        #     if child != child2_ident:
+                        #         tree2_copy.remove_node(child)
 
 
                         # add the cost to change the label of the edges
@@ -191,11 +139,11 @@ def SDTED(tree1, tree2, subgraph_dict1, subgraph_dict2):
                         else:
                             temp_cost = 0
 
-                        if tree1_copy.nodes == {} or tree2_copy.nodes == {}:
-                            cost_matrix[i][j] = (len(list(tree1_copy.nodes)) + len(list(tree2_copy.nodes))) * 2 + temp_cost
-                        else:
-                            cost_matrix[i][j] = recusive_SDTED(tree1_copy, tree2_copy) + temp_cost
-                        # cost_matrix[i][j] = recusive_SDTED(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident]) + temp_cost
+                        # if tree1_copy.nodes == {} or tree2_copy.nodes == {}:
+                        #     cost_matrix[i][j] = (len(list(tree1_copy.nodes)) + len(list(tree2_copy.nodes))) * 2 + temp_cost
+                        # else:
+                        #     cost_matrix[i][j] = recusive_SDTED(tree1_copy, tree2_copy) + temp_cost
+                        cost_matrix[i][j] = recusive_SDTED(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident]) + temp_cost
 
         # calculate the cost of the roots
         cost_root = 1
@@ -219,37 +167,11 @@ def SDTED(tree1, tree2, subgraph_dict1, subgraph_dict2):
         for i in range(n):
             cost += cost_matrix[row_ind[i]][col_ind[i]]
 
-
         return cost + cost_root
-
+    
 
     return recusive_SDTED(tree1, tree2)
 
-def calculate_GED(graph1, graph2, nt_dict):
-
-    min_GED = float("inf")
-    for node1 in graph1.nodes:
-        for node2 in graph2.nodes:
-            # how do i get the id of graph1
-            nt1 = nt_dict[(graph1.graph["id"], node1)][0]
-            nt2 = nt_dict[(graph2.graph["id"], node2)][0]
-            diff_nodes = abs(len(nt1.nodes) - len(nt2.nodes))
-            diff_edges = abs(len(nt1.edges) - len(nt2.edges))
-            if diff_nodes/2 >= min_GED:
-                continue
-            if diff_edges >= min_GED:
-                continue
-            else:
-                GED = SDTED(nt1, nt2, nt_dict[(graph1.graph["id"], node1)][1],nt_dict[(graph2.graph["id"], node2)][1]) #TODO: Add subgraphs here
-                # print(graph1.graph["id"],graph2.graph["id"], node1, node2 ,GED)
-
-            if GED < min_GED:
-                min_GED = GED
-
-            # print("Time to compute one GED for NT-Root Nodes " + str(node1) +" and " + str(node2) +": " + str(t.time() - basetime))
-
-
-    return min_GED
 
 def calculate_costs(tree):
     # add attribute to each node of the tree that stores the cost of inserting the node
@@ -272,13 +194,6 @@ def calculate_costs(tree):
 
     return tree
 
-def create_nt_dict(graphs, height, k):
-    nt_dict = {}
-    for i in range(len(graphs)):
-        for node in graphs[i+1].nodes:
-            nt = BUILDNT(graphs[i+1], node, height, k)
-            nt_dict[(i+1, node)] = calculate_costs(nt), create_subgraph_dict(nt)
-    return nt_dict
 
 def create_subgraph(graph, node): #TODO: erstellt kreisfreien Subgraphen, cNTs haben aber Kreise
     subgraph = nx.Graph()
@@ -298,31 +213,84 @@ def create_subgraph(graph, node): #TODO: erstellt kreisfreien Subgraphen, cNTs h
                     visited.add(neighbor)
     return subgraph
 
+
 def create_subgraph_dict(graph):
     subgraph_dict = {}
     for node in graph.nodes:
         subgraph_dict[node] = create_subgraph(graph, node)
     return subgraph_dict
 
-def calculate_cost_matrix(graphs):
-    nt_dict = create_nt_dict(graphs, 8, 0)
-    cost_matrix = [["#" for i in range(len(graphs))] for j in range(len(graphs))]
-    for i in range(len(graphs)):
-        for j in range(i,len(graphs)):
-            cost_matrix[i][j] = calculate_GED(graphs[i+1], graphs[j+1], nt_dict)
-            # print("Time to compute minimal GED for Graphs " + str(i) + " and " + str(j) + ": " + str(t.time() - basetime))
-            # print(cost_matrix[i][j])
 
-    for i in range(len(graphs)):
-        for j in range(i+1,len(graphs)):  # Skip the diagonal
+def create_nt_dict(graphs, height, k):
+    nt_dict = {}
+    for graph_id in graphs:
+        for node in graphs[graph_id].nodes:
+            nt = BUILDNT(graphs[graph_id], node, height, k)
+            nt_dict[(graph_id, node)] = calculate_costs(nt), create_subgraph_dict(nt)
+    return nt_dict
+
+
+def calculate_GED(graph1, graph2, nt_dict):
+
+    min_GED = float("inf")
+    for node1 in graph1.nodes:
+        for node2 in graph2.nodes:
+            # how do i get the id of graph1
+            nt1 = nt_dict[(graph1.graph["id"], node1)][0]
+            nt2 = nt_dict[(graph2.graph["id"], node2)][0]
+            diff_nodes = abs(len(nt1.nodes) - len(nt2.nodes))
+            diff_edges = abs(len(nt1.edges) - len(nt2.edges))
+            if diff_nodes/2 >= min_GED:
+                continue
+            if diff_edges >= min_GED:
+                continue
+            else:
+                GED = SDTED(nt1, nt2, nt_dict[(graph1.graph["id"], node1)][1],nt_dict[(graph2.graph["id"], node2)][1]) #TODO: Add subgraphs here
+                print(graph1.graph["id"],graph2.graph["id"], node1, node2 ,GED)
+
+            if GED < min_GED:
+                min_GED = GED
+
+            # print("Time to compute one GED for NT-Root Nodes " + str(node1) +" and " + str(node2) +": " + str(t.time() - basetime))
+
+
+    return min_GED
+
+
+# def calculate_cost_matrix(graphs):
+#     basetime = t.time()
+#     nt_dict = create_nt_dict(graphs, 8, 0)
+#     cost_matrix = [["#" for i in range(len(graphs))] for j in range(len(graphs))]
+#     for i in range(len(graphs)):
+#         for j in range(i,len(graphs)):
+#             cost_matrix[i][j] = calculate_GED(graphs[i+1], graphs[j+1], nt_dict)
+#             print("Time to compute minimal GED for Graphs " + str(i) + " and " + str(j) + ": " + str(t.time() - basetime))
+
+#     for i in range(len(graphs)):
+#         for j in range(i+1,len(graphs)):  # Skip the diagonal
+#             cost_matrix[j][i] = cost_matrix[i][j]
+
+#     print(t.time() - basetime)
+
+#     return np.matrix(cost_matrix)
+
+
+def calculate_cost_matrix(graphs):
+    basetime = t.time()
+    nt_dict = create_nt_dict(graphs, 8, 0)
+    
+    graph_ids = list(graphs.keys())  # Speichert die tatsächlichen Graph-IDs (z.B. [8,10])
+    cost_matrix = [["#" for _ in range(len(graph_ids))] for _ in range(len(graph_ids))]
+
+    for i, id1 in enumerate(graph_ids):  # Iteriere über die tatsächlichen Graph-IDs
+        for j, id2 in enumerate(graph_ids[i:], start=i):  # Vergleiche nur einmal
+            cost_matrix[i][j] = calculate_GED(graphs[id1], graphs[id2], nt_dict)
+            print(f"Time to compute minimal GED for Graphs {id1} and {id2}: {t.time() - basetime}")
+
+    for i in range(len(graph_ids)):
+        for j in range(i+1, len(graph_ids)):  # Fülle die untere Dreiecksmatrix
             cost_matrix[j][i] = cost_matrix[i][j]
 
     print(t.time() - basetime)
 
     return np.matrix(cost_matrix)
-
-
-# print(calculate_cost_matrix(graphs))
-
-# print(calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}))
-
