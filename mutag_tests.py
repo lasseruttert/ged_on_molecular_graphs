@@ -57,21 +57,9 @@ for graph_id in node_to_graph["graph_id"].unique():
         graphs[graph_id].edges[target, source]["label"] = edge_label  # Ungerichtete Kante (symmetrisch)
 
 # print(main.calculate_cost_matrix(graphs))
+# with np.printoptions(precision=4, suppress=True, floatmode = 'fixed', formatter={'float': '{:0.4f}'.format}, linewidth=100):
+#     print(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:5]}))
 
-#only print a 5 x 5 matrix
-# print(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:5]}))
+df = pd.DataFrame(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}))
+print(df.to_string(index=False, header=False, float_format=lambda x: f"{int(x)}" if x == int(x) else f"{x:.2f}"))
 
-test_graph1 = graphs[8]
-test_graph2 = graphs[10]
-
-# # plot
-# nx.draw(test_graph1, with_labels=True)
-# plt.show()
-
-# nx.draw(test_graph2, with_labels=True)
-# plt.show()
-
-# print(test_graph1.nodes)
-# print(test_graph2.nodes)
-
-print(main.calculate_cost_matrix({8: test_graph1, 10: test_graph2}))
