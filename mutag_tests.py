@@ -63,3 +63,19 @@ for graph_id in node_to_graph["graph_id"].unique():
 df = pd.DataFrame(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}))
 print(df.to_string(index=False, header=False, float_format=lambda x: f"{int(x)}" if x == int(x) else f"{x:.2f}"))
 
+# import cProfile
+# import pstats
+
+# def profile_code():
+#     profiler = cProfile.Profile()
+#     profiler.enable()
+
+#     # Call the function you want to profile
+#     main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]})
+
+#     profiler.disable()
+#     stats = pstats.Stats(profiler).sort_stats('cumtime')
+#     stats.print_stats()
+
+# # Call the profiling function
+# profile_code()

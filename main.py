@@ -7,6 +7,7 @@ import random as r
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from itertools import combinations
+from functools import lru_cache
 
 def BUILDNT(graph, root, height, k):
     tree = nx.DiGraph()
@@ -56,19 +57,24 @@ def SDTED(treee1, treee2, subgraph_dict1, subgraph_dict2):
 
         return tree
 
-    cache = {}
-
+    @lru_cache(maxsize=None)
     def recusive_SDTED(tree1, tree2):
-        if (tree1.graph["encoding"], tree2.graph["encoding"]) in cache:
-            return cache[(tree1.graph["encoding"], tree2.graph["encoding"])]
+        key = (tree1.graph["encoding"], tree2.graph["encoding"])
+        if key in cache:
+            return cache[key]
 
         # n is the maximum number of children of the root of the two trees
         n = max(tree1.degree[next(iter(tree1.nodes))], tree2.degree[next(iter(tree2.nodes))])
 
         # add undefined nodes to the trees
 
-        tree1_padded = PAD(tree1, n)
-        tree2_padded = PAD(tree2, n)
+        tree1_padded = tree1
+        tree2_padded = tree2
+
+        if tree1.degree[next(iter(tree1.nodes))] != tree2.degree[next(iter(tree2.nodes))]:
+
+            tree1_padded = PAD(tree1, n)
+            tree2_padded = PAD(tree2, n)
 
         # create the cost matrix as n x n matrix
         cost_matrix = np.zeros((n, n))
@@ -90,15 +96,16 @@ def SDTED(treee1, treee2, subgraph_dict1, subgraph_dict2):
                 child1 = tree1_padded.nodes[child1_ident]
                 child2 = tree2_padded.nodes[child2_ident]
 
+                child1_label = child1["label"]
+                child2_label = child2["label"]
 
-                if child1["label"] != "PAD" or child2["label"] != "PAD":
-                    if child1["label"] != "PAD" and child2["label"] == "PAD":
+                if child1_label != "PAD" or child2_label != "PAD":
+                    if child1_label != "PAD" and child2_label == "PAD":
                         cost_matrix[i][j] = tree1_padded.nodes[child1_ident]["cost"] + 1
-                    elif child2["label"] != "PAD" and child1["label"] == "PAD":
+                    elif child2_label != "PAD" and child1_label == "PAD":
                         cost_matrix[i][j] = tree2_padded.nodes[child2_ident]["cost"] + 1
                     else:
                         temp_cost = 1 if hash(tree1_padded.edges[root1, child1_ident]["label"]) != hash(tree2_padded.edges[root2, child2_ident]["label"]) else 0
-
                         cost_matrix[i][j] = recusive_SDTED(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident]) + temp_cost
 
         # calculate the cost of the roots
@@ -109,20 +116,19 @@ def SDTED(treee1, treee2, subgraph_dict1, subgraph_dict2):
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
 
         cost = 0
-        for i in range(n):
+        for i in range(n): 
             cost += cost_matrix[row_ind[i]][col_ind[i]]
 
-        # cache[(encode_tree(tree1), encode_tree(tree2))] = cost + cost_root
-        cache[(tree1.graph["encoding"], tree2.graph["encoding"])] = cost + cost_root
+        cache[key] = cost + cost_root
 
         return cost + cost_root
     
+    cache = {}
 
     return recusive_SDTED(treee1, treee2)
 
 
 def calculate_costs(tree):
-
     for node in tree.nodes:
         cost = 1
         queue = deque([node])
@@ -183,26 +189,57 @@ def create_nt_dict(graphs, height, k):
     return nt_dict
 
 
-def calculate_GED(graph1, graph2, nt_dict):
-    min_GED = float("inf")
-    for node1 in graph1.nodes:
-        for node2 in graph2.nodes:
-            nt1 = nt_dict[(graph1.graph["id"], node1)][0]
-            nt2 = nt_dict[(graph2.graph["id"], node2)][0]
-            # diff_nodes = abs(len(nt1.nodes) - len(nt2.nodes))
-            # diff_edges = abs(len(nt1.edges) - len(nt2.edges))
-            # if diff_nodes/2 >= min_GED:
-            #     continue
-            # if diff_edges >= min_GED:
-            #     continue
-            # else:
-            GED = SDTED(nt1, nt2, nt_dict[(graph1.graph["id"], node1)][1],nt_dict[(graph2.graph["id"], node2)][1]) #TODO: Add subgraphs here
-            print(graph1.graph["id"],graph2.graph["id"], node1, node2 ,GED)
+# def calculate_GED(graph1, graph2, nt_dict):
+#     min_GED = float("inf")
+#     for node1 in graph1.nodes:
+#         for node2 in graph2.nodes:
+#             nt1 = nt_dict[(graph1.graph["id"], node1)][0]
+#             nt2 = nt_dict[(graph2.graph["id"], node2)][0]
+#             # diff_nodes = abs(len(nt1.nodes) - len(nt2.nodes))
+#             # diff_edges = abs(len(nt1.edges) - len(nt2.edges))
+#             # if diff_nodes/2 >= min_GED:
+#             #     continue
+#             # if diff_edges >= min_GED:
+#             #     continue
+#             # else:
+#             GED = SDTED(nt1, nt2, nt_dict[(graph1.graph["id"], node1)][1],nt_dict[(graph2.graph["id"], node2)][1]) #TODO: Add subgraphs here
+#             print(graph1.graph["id"],graph2.graph["id"], node1, node2 ,GED)
 
+#             if GED < min_GED:
+#                 min_GED = GED
+
+#             # print("Time to compute one GED for NT-Root Nodes " + str(node1) +" and " + str(node2) +": " + str(t.time() - basetime))
+
+#     return min_GED
+
+# def calculate_cost_matrix(graphs):
+#     basetime = t.time()
+#     nt_dict = create_nt_dict(graphs, 8, 0)
+
+#     graph_ids = list(graphs.keys())
+#     cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0, dtype=object)
+
+#     for i, j in combinations(range(len(graph_ids)), 2):
+#         cost_matrix[i, j] = cost_matrix[j, i] = calculate_GED(graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict)
+
+#     print(f"Total time: {t.time() - basetime}")
+#     return np.matrix(cost_matrix)
+
+
+import concurrent.futures
+
+def calculate_GED_parallel(graph1, graph2, nt_dict):
+    min_GED = float("inf")
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for node1 in graph1.nodes:
+            for node2 in graph2.nodes:
+                futures.append(executor.submit(SDTED, nt_dict[(graph1.graph["id"], node1)][0], nt_dict[(graph2.graph["id"], node2)][0], nt_dict[(graph1.graph["id"], node1)][1], nt_dict[(graph2.graph["id"], node2)][1]))
+
+        for future in concurrent.futures.as_completed(futures):
+            GED = future.result()
             if GED < min_GED:
                 min_GED = GED
-
-            # print("Time to compute one GED for NT-Root Nodes " + str(node1) +" and " + str(node2) +": " + str(t.time() - basetime))
 
     return min_GED
 
@@ -213,8 +250,13 @@ def calculate_cost_matrix(graphs):
     graph_ids = list(graphs.keys())
     cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0, dtype=object)
 
-    for i, j in combinations(range(len(graph_ids)), 2):
-        cost_matrix[i, j] = cost_matrix[j, i] = calculate_GED(graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {}
+        for i, j in combinations(range(len(graph_ids)), 2):
+            futures[(i, j)] = executor.submit(calculate_GED_parallel, graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict)
+
+        for (i, j), future in futures.items():
+            cost_matrix[i, j] = cost_matrix[j, i] = future.result()
 
     print(f"Total time: {t.time() - basetime}")
     return np.matrix(cost_matrix)
