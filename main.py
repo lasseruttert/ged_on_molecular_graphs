@@ -36,7 +36,7 @@ def BUILDNT(graph, root, height, k):
     return tree
 
 
-def SDTED(treee1, treee2, subgraph_dict1, subgraph_dict2):
+def SDTED(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
     def PAD(tree, number):
         root = next(iter(tree.nodes))
         
@@ -122,10 +122,10 @@ def SDTED(treee1, treee2, subgraph_dict1, subgraph_dict2):
         cache[key] = cost + cost_root
 
         return cost + cost_root
-    
-    cache = {}
 
-    return recusive_SDTED(treee1, treee2)
+    result = recusive_SDTED(treee1, treee2)
+    cache[(treee1.graph["encoding"], treee2.graph["encoding"])] = result
+    return result
 
 
 def calculate_costs(tree):
@@ -227,14 +227,28 @@ def create_nt_dict(graphs, height, k):
 
 
 import concurrent.futures
+from networkx.algorithms import isomorphism
 
-def calculate_GED_parallel(graph1, graph2, nt_dict):
+def calculate_GED_parallel(graph1, graph2, nt_dict, cache):
     min_GED = float("inf")
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = []
         for node1 in graph1.nodes:
             for node2 in graph2.nodes:
-                futures.append(executor.submit(SDTED, nt_dict[(graph1.graph["id"], node1)][0], nt_dict[(graph2.graph["id"], node2)][0], nt_dict[(graph1.graph["id"], node1)][1], nt_dict[(graph2.graph["id"], node2)][1]))
+                nt1 = nt_dict[(graph1.graph["id"], node1)][0]
+                nt2 = nt_dict[(graph2.graph["id"], node2)][0]
+                nt1_subgraph = nt_dict[(graph1.graph["id"], node1)][1]
+                nt2_subgraph = nt_dict[(graph2.graph["id"], node2)][1]
+
+                diff_nodes = abs(len(nt1.nodes) - len(nt2.nodes))
+                diff_edges = abs(len(nt1.edges) - len(nt2.edges))
+
+                if diff_nodes/2 >= min_GED:
+                    continue
+                if diff_edges >= min_GED:
+                    continue
+
+                futures.append(executor.submit(SDTED, nt1, nt2, nt1_subgraph, nt2_subgraph, cache))
 
         for future in concurrent.futures.as_completed(futures):
             GED = future.result()
@@ -243,9 +257,10 @@ def calculate_GED_parallel(graph1, graph2, nt_dict):
 
     return min_GED
 
-def calculate_cost_matrix(graphs):
+def calculate_cost_matrix(graphs, height=8, k=0):
     basetime = t.time()
-    nt_dict = create_nt_dict(graphs, 8, 0)
+    cache = {}
+    nt_dict = create_nt_dict(graphs, height, k)
 
     graph_ids = list(graphs.keys())
     cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0, dtype=object)
@@ -253,7 +268,7 @@ def calculate_cost_matrix(graphs):
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {}
         for i, j in combinations(range(len(graph_ids)), 2):
-            futures[(i, j)] = executor.submit(calculate_GED_parallel, graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict)
+            futures[(i, j)] = executor.submit(calculate_GED_parallel, graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
 
         for (i, j), future in futures.items():
             cost_matrix[i, j] = cost_matrix[j, i] = future.result()

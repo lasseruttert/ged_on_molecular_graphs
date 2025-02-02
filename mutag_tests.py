@@ -79,3 +79,10 @@ print(df.to_string(index=False, header=False, float_format=lambda x: f"{int(x)}"
 
 # # Call the profiling function
 # profile_code()
+
+# nt_dic = main.create_nt_dict({k: graphs[k] for k in list(graphs)[:2]}, 8, 0)
+
+# node1_of_tree1 = list(graphs[1].nodes)[0]
+# node1_of_tree2 = list(graphs[2].nodes)[0]
+
+# main.SDTED(nt_dic[(1, node1_of_tree1)][0], nt_dic[(2, node1_of_tree2)][0], nt_dic[(1, node1_of_tree1)][1], nt_dic[(2, node1_of_tree2)][1])
