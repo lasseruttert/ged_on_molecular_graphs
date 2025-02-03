@@ -57,11 +57,25 @@ for graph_id in node_to_graph["graph_id"].unique():
         graphs[graph_id].edges[target, source]["label"] = edge_label  # Ungerichtete Kante (symmetrisch)
 
 # print(main.calculate_cost_matrix(graphs))
-# with np.printoptions(precision=4, suppress=True, floatmode = 'fixed', formatter={'float': '{:0.4f}'.format}, linewidth=100):
-#     print(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:5]}))
+with np.printoptions(precision=4, suppress=True, floatmode = 'fixed', formatter={'float': '{:0.4f}'.format}, linewidth=100):
+    print(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:2]}, 10, 1))
+    #plot graph 1 and 2
+plt.subplot(121)
+nx.draw(graphs[1], with_labels=True, font_weight='bold')
+plt.subplot(122)
+nx.draw(graphs[2], with_labels=True, font_weight='bold')
+plt.show()
 
-df = pd.DataFrame(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}))
-print(df.to_string(index=False, header=False, float_format=lambda x: f"{int(x)}" if x == int(x) else f"{x:.2f}"))
+    #compare to NX GED
+    # nx_ged = np.zeros((10, 10))
+    # for i in range(1, 11):
+    #     for j in range(1, 11):
+    #         nx_ged[i-1, j-1] = nx.graph_edit_distance(graphs[i], graphs[j])
+
+    # print(nx_ged)
+
+# df = pd.DataFrame(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:5]}))
+# print(df.to_string(index=False, header=False, float_format=lambda x: f"{int(x)}" if x == int(x) else f"{x:.2f}"))
 
 # import cProfile
 # import pstats
@@ -85,4 +99,4 @@ print(df.to_string(index=False, header=False, float_format=lambda x: f"{int(x)}"
 # node1_of_tree1 = list(graphs[1].nodes)[0]
 # node1_of_tree2 = list(graphs[2].nodes)[0]
 
-# main.SDTED(nt_dic[(1, node1_of_tree1)][0], nt_dic[(2, node1_of_tree2)][0], nt_dic[(1, node1_of_tree1)][1], nt_dic[(2, node1_of_tree2)][1])
+# main.sdted(nt_dic[(1, node1_of_tree1)][0], nt_dic[(2, node1_of_tree2)][0], nt_dic[(1, node1_of_tree1)][1], nt_dic[(2, node1_of_tree2)][1])
