@@ -56,42 +56,48 @@ for graph_id in node_to_graph["graph_id"].unique():
         graphs[graph_id].edges[source, target]["label"] = edge_label
         graphs[graph_id].edges[target, source]["label"] = edge_label  # Ungerichtete Kante (symmetrisch)
 
+def print_two_graphs(graph1, graph2, layout='spring'):
+    fig, axes = plt.subplots(1, 2, figsize=(30, 15))
+
+    if layout == 'spring':
+        pos1 = nx.spring_layout(graph1)
+        pos2 = nx.spring_layout(graph2)
+    elif layout == 'circular':
+        pos1 = nx.circular_layout(graph1)
+        pos2 = nx.circular_layout(graph2)
+    elif layout == 'kamada_kawai':
+        pos1 = nx.kamada_kawai_layout(graph1)
+        pos2 = nx.kamada_kawai_layout(graph2)
+    else:
+        raise ValueError("Unsupported layout type. Use 'spring', 'circular', or 'kamada_kawai'.")
+
+    # Plot graph1
+    node_labels1 = nx.get_node_attributes(graph1, 'label')
+    edge_labels1 = nx.get_edge_attributes(graph1, 'label')
+    nx.draw(graph1, pos1, with_labels=True, labels=node_labels1, ax=axes[0])
+    nx.draw_networkx_edge_labels(graph1, pos1, edge_labels=edge_labels1, ax=axes[0])
+    axes[0].set_title("Graph 1")
+
+    # Plot graph2
+    node_labels2 = nx.get_node_attributes(graph2, 'label')
+    edge_labels2 = nx.get_edge_attributes(graph2, 'label')
+    nx.draw(graph2, pos2, with_labels=True, labels=node_labels2, ax=axes[1])
+    nx.draw_networkx_edge_labels(graph2, pos2, edge_labels=edge_labels2, ax=axes[1])
+    axes[1].set_title("Graph 2")
+
+    plt.show()
+
+    return None
+
+
 # print(main.calculate_cost_matrix(graphs))
-with np.printoptions(precision=4, suppress=True, floatmode = 'fixed', formatter={'float': '{:0.4f}'.format}, linewidth=100):
-    print(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}, 10, 0)[0])
+# with np.printoptions(precision=4, suppress=True, floatmode = 'fixed', formatter={'float': '{:0.4f}'.format}, linewidth=100):
+#     print(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}, 10, 0)[0])
 
+cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:5]}, 10, 0)
+# print(cost_matrix)
+# print(edit_matrix)
 
-    #compare to NX GED
-    # nx_ged = np.zeros((10, 10))
-    # for i in range(1, 11):
-    #     for j in range(1, 11):
-    #         nx_ged[i-1, j-1] = nx.graph_edit_distance(graphs[i], graphs[j])
+new_graph = main.graph_matcher(graphs[2], graphs[3], edit_matrix[1,2], matchings[1,2])
+print_two_graphs(graphs[3], new_graph)
 
-    # print(nx_ged)
-
-# df = pd.DataFrame(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:5]}))
-# print(df.to_string(index=False, header=False, float_format=lambda x: f"{int(x)}" if x == int(x) else f"{x:.2f}"))
-
-# import cProfile
-# import pstats
-
-# def profile_code():
-#     profiler = cProfile.Profile()
-#     profiler.enable()
-
-#     # Call the function you want to profile
-#     main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]})
-
-#     profiler.disable()
-#     stats = pstats.Stats(profiler).sort_stats('cumtime')
-#     stats.print_stats()
-
-# # Call the profiling function
-# profile_code()
-
-# nt_dic = main.create_nt_dict({k: graphs[k] for k in list(graphs)[:2]}, 8, 0)
-
-# node1_of_tree1 = list(graphs[1].nodes)[0]
-# node1_of_tree2 = list(graphs[2].nodes)[0]
-
-# main.sdted(nt_dic[(1, node1_of_tree1)][0], nt_dic[(2, node1_of_tree2)][0], nt_dic[(1, node1_of_tree1)][1], nt_dic[(2, node1_of_tree2)][1])

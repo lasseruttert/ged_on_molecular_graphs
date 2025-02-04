@@ -197,88 +197,6 @@ def create_nt_dict(graphs, height, k):
             nt_dict[(graph_id, node)] = calculate_costs(nt), create_subgraph_dict(nt)
     return nt_dict
 
-from itertools import zip_longest
-
-# def derive_edit_path(graph1, graph2, row_ind, col_ind):
-#     edit_path = []
-#     matched_nodes1 = {list(graph1.nodes)[i] for i in row_ind}
-#     matched_nodes2 = {list(graph2.nodes)[j] for j in col_ind}
-
-#     nodes_missing_edges = set()
-
-#     visited_edges = set()
-
-#     for i, j in zip(row_ind, col_ind): 
-#         node1 = list(graph1.nodes)[i]
-#         node2 = list(graph2.nodes)[j]
-
-#         # Falls Labels unterschiedlich sind → Relabeling
-#         if graph1.nodes[node1]["label"] != graph2.nodes[node2]["label"]:
-#             edit_path.append(f"relabel {node1} -> {node2}")
-
-#         # schaue nur nachbarn an, die ebenfalls gematcht wurden
-#         neighbors1 = set(graph1.neighbors(node1)) & matched_nodes1
-#         neighbors2 = set(graph2.neighbors(node2)) & matched_nodes2
-
-#         corresponding_neighbors = list(zip_longest(neighbors1, neighbors2))
-
-#         for neighbor1, neighbor2 in corresponding_neighbors:
-#             if (node1, neighbor1) in visited_edges or (neighbor1, node1) in visited_edges:
-#                 continue
-#             if (node2, neighbor2) in visited_edges or (neighbor2, node2) in visited_edges:
-#                 continue
-
-#             if (node1, neighbor1) in graph1.edges and (node2, neighbor2) in graph2.edges:
-#                 if graph1.edges[node1, neighbor1]["label"] != graph2.edges[node2, neighbor2]["label"]:
-#                     edit_path.append(f"relabel edge {node1} -> {neighbor1} -> {node2} -> {neighbor2}")
-
-#             if(node2, neighbor2) in graph2.edges and (node1, neighbor1) not in graph1.edges:
-#                 nodes_missing_edges.add(node1)
-#             if(node1, neighbor1) in graph1.edges and (node2, neighbor2) not in graph2.edges:
-#                 edit_path.append(f"delete edge: {node1} -> {neighbor1}")
-
-#             visited_edges.add((node1, neighbor1))
-#             visited_edges.add((neighbor1, node1))
-#             visited_edges.add((node2, neighbor2))
-#             visited_edges.add((neighbor2, node2))
-
-#     for node1 in nodes_missing_edges: #TODO
-#         for node2 in nodes_missing_edges:
-#             if node1 != node2:
-#                 # get the corresponding nodes in graph2
-#                 if node1 in graph1.nodes and node2 in graph1.nodes:
-#                     index1 = list(graph1.nodes).index(node1)
-#                     index2 = list(graph1.nodes).index(node2)
-#                     if index1 <= len(col_ind) and index2 <= len(col_ind):
-#                         corresponding_node1 = list(graph2.nodes)[col_ind[index1]]
-#                         corresponding_node2 = list(graph2.nodes)[col_ind[index2]]
-#                         if (corresponding_node1, corresponding_node2) in graph2.edges:
-#                             if (node1, node2) not in visited_edges or (node2, node1) not in visited_edges:
-#                                 edit_path.append(f"insert edge: {node1} -> {node2}")
-#                                 visited_edges.add((node1, node2))
-#                                 visited_edges.add((node2, node1))
-
-#     # Knoten, die nicht gematcht wurden, müssen gelöscht oder eingefügt werden #TODO: Check if this is correct
-#     unmatched_nodes1 = set(graph1.nodes) - matched_nodes1
-#     unmatched_nodes2 = set(graph2.nodes) - matched_nodes2
-
-#     for node in unmatched_nodes1:
-#         edit_path.append(f"delete node: {node}")
-#         for neighbor in graph1.neighbors(node):
-#             if (node, neighbor) not in visited_edges or (neighbor, node) not in visited_edges:
-#                 edit_path.append(f"delete edge: {node} -> {neighbor}")
-#                 visited_edges.add((node, neighbor))
-#                 visited_edges.add((neighbor, node))
-
-#     for node in unmatched_nodes2:
-#         edit_path.append(f"insert node: {node}")
-#         for neighbor in graph2.neighbors(node):
-#             if (node, neighbor) not in visited_edges or (neighbor, node) not in visited_edges:
-#                 edit_path.append(f"insert edge: {node} -> {neighbor}")
-#                 visited_edges.add((node, neighbor))
-#                 visited_edges.add((neighbor, node))
-
-#     return edit_path
 
 def derive_edit_path(graph1, graph2, row_ind, col_ind):
     edit_path = []
@@ -300,29 +218,35 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
         matched_nodes1.add(node1)
         matched_nodes2.add(node2)
         if graph1.nodes[node1]["label"] != graph2.nodes[node2]["label"]:
-            edit_path.append(f"relabel node {node1} -> {node2}")
+            edit_path.append(f"relabel node: {node1} -> {node2}")
     
     # Unmatched Knoten in Graph1: löschen
     unmatched_nodes1 = set(graph1.nodes) - matched_nodes1
     for node in unmatched_nodes1:
-        edit_path.append(f"delete node: {node}")
         for neighbor in graph1.neighbors(node):
             if (node, neighbor) not in visited_edges or (neighbor, node) not in visited_edges:
                 visited_edges.add((node, neighbor))
                 visited_edges.add((neighbor, node))
                 edit_path.append(f"delete edge: {node}-{neighbor}")
+        edit_path.append(f"delete node: {node}")
     
     # Unmatched Knoten in Graph2: einfügen
     unmatched_nodes2 = set(graph2.nodes) - matched_nodes2
     for node in unmatched_nodes2:
         edit_path.append(f"insert node: {node}")
-        for neighbor in graph2.neighbors(node):
-            if (node, neighbor) not in visited_edges or (neighbor, node) not in visited_edges:
-                visited_edges.add((node, neighbor))
-                visited_edges.add((neighbor, node))
-                edit_path.append(f"insert edge: {node}-{neighbor}")
 
-    # TODO Hier fehler mit der 8 lösen
+    for node in unmatched_nodes2:
+        for neighbor in graph2.neighbors(node):
+                if neighbor not in mapping_inv:
+                    if (node, neighbor) not in visited_edges or (neighbor, node) not in visited_edges:
+                        visited_edges.add((node, neighbor))
+                        visited_edges.add((neighbor, node))
+                        edit_path.append(f"insert n_edge: {node}-{neighbor}")
+                elif neighbor in mapping_inv:
+                    if (node, neighbor) not in visited_edges or (neighbor, node) not in visited_edges:
+                        visited_edges.add((node, neighbor))
+                        visited_edges.add((neighbor, node))
+                        edit_path.append(f"insert h_edge: {node}-{mapping_inv[neighbor]}")
 
     for (u,v) in graph1.edges:
         if u not in mapping or v not in mapping:
@@ -385,11 +309,14 @@ def calculate_GED_bgm(graph1, graph2, nt_dict, cache):
 
     row_ind, col_ind = linear_sum_assignment(cost_matrix)
 
+    # get a list of matched nodes
+    matching = [(nodes1[i], nodes2[j]) for i, j in zip(row_ind, col_ind)]
+
     # Berechne den finalen Edit-Path mit den Edge Costs
     edit_path = derive_edit_path(graph1, graph2, row_ind, col_ind)
     min_GED = len(edit_path)
 
-    return row_ind, col_ind, min_GED, edit_path
+    return row_ind, col_ind, min_GED, edit_path, matching
 
 
 def calculate_cost_matrix(graphs, height=8, k=0):
@@ -400,6 +327,7 @@ def calculate_cost_matrix(graphs, height=8, k=0):
     graph_ids = list(graphs.keys())
     cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0)
     edit_paths = {}
+    matchings = {}
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         futures = {}
@@ -407,82 +335,85 @@ def calculate_cost_matrix(graphs, height=8, k=0):
             futures[(i, j)] = executor.submit(calculate_GED_bgm, graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
 
         for (i, j), future in futures.items():
-            row_ind, col_ind, min_GED, edit_path = future.result()
+            row_ind, col_ind, min_GED, edit_path, matching = future.result()
             cost_matrix[i, j] = cost_matrix[j, i] = min_GED
             edit_paths[(i, j)] = edit_paths[(j, i)] = edit_path
+            matchings[(i, j)] = matchings[(j, i)] = matching
 
     print(f"Total time: {t.time() - basetime}")
-    return cost_matrix, edit_paths
+    return cost_matrix, edit_paths, matchings
 
 
+def graph_matcher(graph1, graph2, edit_path, matching):
+    # Erzeuge Kopien der Graphen
+    graph1 = graph1.copy()
+    graph2 = graph2.copy()
+
+    for action in edit_path:
+        if action.startswith("relabel node"):
+            _, nodes = action.split(":")
+            node1, node2 = nodes.split("->")
+            graph1.nodes[int(node1)]["label"] = graph2.nodes[int(node2)]["label"]
+        elif action.startswith("delete node"):
+            _, node = action.split(":")
+            graph1.remove_node(int(node))
+        elif action.startswith("insert node"):
+            _, node1 = action.split(":")
+            # find the node in graph2
+            graph1.add_node(int(node1), label=graph2.nodes[int(node1)]["label"])
+        elif action.startswith("relabel edge"):
+            _, edges = action.split(":")
+            edge1, edge2 = edges.split("->")
+            u1, v1 = map(int, edge1.split("-"))
+            u2, v2 = map(int, edge2.split("-"))
+            graph1.edges[u1, v1]["label"] = graph2.edges[u2, v2]["label"]
+        elif action.startswith("delete edge"):
+            _, edge = action.split(":")
+            u, v = map(int, edge.split("-"))
+            graph1.remove_edge(u, v)
+        elif action.startswith("insert edge"):
+            _, edge = action.split(":")
+            u, v = map(int, edge.split("-"))
+            u_matching = None
+            v_matching = None
+            for tupel in matching:
+                if tupel[0] == u:
+                    u_matching = tupel[1]
+                if tupel[0] == v:
+                    v_matching = tupel[1]
+            graph1.add_edge(u, v, label=graph2.edges[u_matching, v_matching]["label"])
+        elif action.startswith("insert n_edge"):
+            _, edge = action.split(":")
+            u, v = map(int, edge.split("-"))
+            graph1.add_edge(u, v, label=graph2.edges[u, v]["label"])
+        elif action.startswith("insert h_edge"):
+            _, edge = action.split(":")
+            u, v = map(int, edge.split("-"))
+            v_matching = None
+            for tupel in matching:
+                if tupel[0] == v:
+                    v_matching = tupel[1]
+            graph1.add_edge(u, v, label=graph2.edges[u, v_matching]["label"])
+
+    return graph1
+
+def isomorph_check(graph1, graph2):
+    if len(graph1.nodes) != len(graph2.nodes) or len(graph1.edges) != len(graph2.edges):
+        return False
+
+    for node1, node2 in zip(sorted(graph1.nodes), sorted(graph2.nodes)):
+        if graph1.nodes[node1]["label"] != graph2.nodes[node2]["label"]:
+            return False
+
+    for (u1, v1), (u2, v2) in zip(sorted(graph1.edges), sorted(graph2.edges)):
+        if graph1.edges[u1, v1]["label"] != graph2.edges[u2, v2]["label"]:
+            return False
+
+    return True
 
 
 
 # OLD CODE WHICH USED SDTED AS GED CALCULATION
-
-# def calculate_GED(graph1, graph2, nt_dict):
-#     min_GED = float("inf")
-#     for node1 in graph1.nodes:
-#         for node2 in graph2.nodes:
-#             nt1 = nt_dict[(graph1.graph["id"], node1)][0]
-#             nt2 = nt_dict[(graph2.graph["id"], node2)][0]
-#             # diff_nodes = abs(len(nt1.nodes) - len(nt2.nodes))
-#             # diff_edges = abs(len(nt1.edges) - len(nt2.edges))
-#             # if diff_nodes/2 >= min_GED:
-#             #     continue
-#             # if diff_edges >= min_GED:
-#             #     continue
-#             # else:
-#             GED = sdted(nt1, nt2, nt_dict[(graph1.graph["id"], node1)][1],nt_dict[(graph2.graph["id"], node2)][1]) #TODO: Add subgraphs here
-#             print(graph1.graph["id"],graph2.graph["id"], node1, node2 ,GED)
-
-#             if GED < min_GED:
-#                 min_GED = GED
-
-#             # print("Time to compute one GED for NT-Root Nodes " + str(node1) +" and " + str(node2) +": " + str(t.time() - basetime))
-
-#     return min_GED
-
-# def calculate_cost_matrix(graphs):
-#     basetime = t.time()
-#     nt_dict = create_nt_dict(graphs, 8, 0)
-
-#     graph_ids = list(graphs.keys())
-#     cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0, dtype=object)
-
-#     for i, j in combinations(range(len(graph_ids)), 2):
-#         cost_matrix[i, j] = cost_matrix[j, i] = calculate_GED(graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict)
-
-#     print(f"Total time: {t.time() - basetime}")
-#     return np.matrix(cost_matrix)
-
-
-# def calculate_GED_bgm(graph1, graph2, nt_dict, cache):
-#     n1, n2 = len(graph1.nodes), len(graph2.nodes)
-#     cost_matrix = np.full((n1, n2), np.inf)  # Verwende eine hohe Default-Kosten für nicht existierende Knoten
-
-#     nodes1 = list(graph1.nodes)
-#     nodes2 = list(graph2.nodes)
-
-#     # Berechne SDTED für alle möglichen Knotenpaare
-#     for i, node1 in enumerate(nodes1):
-#         for j, node2 in enumerate(nodes2):
-#             nt1 = nt_dict[(graph1.graph["id"], node1)][0]
-#             nt2 = nt_dict[(graph2.graph["id"], node2)][0]
-#             nt1_subgraph = nt_dict[(graph1.graph["id"], node1)][1]
-#             nt2_subgraph = nt_dict[(graph2.graph["id"], node2)][1]
-
-#             cost_matrix[i, j] = sdted(nt1, nt2, nt1_subgraph, nt2_subgraph, cache)[0]  # Speichere SDTED-Werte
-
-#     # Optimales Matching mit dem Hungarian Algorithmus
-#     row_ind, col_ind = linear_sum_assignment(cost_matrix)
-
-#     # Berechne GED basierend auf dem Edit-Path
-#     edit_path = derive_edit_path(graph1, graph2, row_ind, col_ind)
-#     min_GED = len(edit_path)  # GED entspricht der Anzahl der benötigten Edit-Operationen
-
-#     return row_ind, col_ind, min_GED
-
 
 # def calculate_GED_parallel(graph1, graph2, nt_dict, cache):
 #     min_GED = float("inf")
