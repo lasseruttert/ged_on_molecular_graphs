@@ -5,11 +5,12 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 from itertools import combinations
 from functools import lru_cache
+import matplotlib.pyplot as plt
 import concurrent.futures
 
 def encode_graph(graph):
-    node_labels = "".join(sorted([f"{n}:{graph.nodes[n]['label']}" for n in graph.nodes]))
-    edge_labels = "".join(sorted([f"{u}-{v}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
+    node_labels = "".join(sorted([f"{graph.nodes[n]['label']}" for n in graph.nodes]))
+    edge_labels = "".join(sorted([f"{graph.nodes[u]['label']}-{graph.nodes[v]['label']}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
     return hash(node_labels + edge_labels)
 
 def build_nt(graph, root, height, k):
@@ -86,8 +87,13 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         root1 = next(iter(tree1_padded.nodes))
         root2 = next(iter(tree2_padded.nodes))
 
-        children1 = sorted(tree1_padded.neighbors(next(iter(tree1_padded.nodes))))
-        children2 = sorted(tree2_padded.neighbors(next(iter(tree2_padded.nodes))))
+        # children1 = sorted(tree1_padded.neighbors(next(iter(tree1_padded.nodes))))
+        # children2 = sorted(tree2_padded.neighbors(next(iter(tree2_padded.nodes))))
+
+        nodes_list = list(tree1_padded.nodes)  # Sicherstellen, dass wir über eine feste Liste iterieren
+        children1 = sorted(tree1_padded.neighbors(nodes_list[0]))  # Nimm das erste Element der Liste
+        nodes_list = list(tree2_padded.nodes)  # Sicherstellen, dass wir über eine feste Liste iterieren
+        children2 = sorted(tree2_padded.neighbors(nodes_list[0]))  # Nimm das erste Element der Liste
 
         for i in range(n):
             for j in range(n):
@@ -109,7 +115,11 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
                     else:
                         temp_cost = 1 if hash(tree1_padded.edges[root1, child1_ident]["label"]) != hash(tree2_padded.edges[root2, child2_ident]["label"]) else 0
                         
-                        recursive_cost = recusive_sdted(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident], depth + 1)
+                        # check cache
+                        if (subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"]) in cache:
+                            recursive_cost = cache[(subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"])]
+                        else:
+                            recursive_cost = recusive_sdted(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident], depth + 1)
                         cost_matrix[i][j] = (recursive_cost + temp_cost) 
 
 
@@ -270,7 +280,7 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
             edit_path.append(f"insert edge: {mapping_inv[u]}-{mapping_inv[v]}")
             visited_edges.add((u,v))
         elif graph1.edges[mapping_inv[u], mapping_inv[v]]["label"] != graph2.edges[u,v]["label"]:
-            edit_path.append(f"relabel edge: {u}-{v} -> {mapping_inv[u]}-{mapping_inv[v]}")
+            edit_path.append(f"relabel r_edge: {u}-{v} -> {mapping_inv[u]}-{mapping_inv[v]}")
             visited_edges.add((u,v))
     
     return edit_path
@@ -305,7 +315,6 @@ def calculate_GED_bgm(graph1, graph2, nt_dict, cache):
     # Optimiere das Matching mit dem Hungarian Algorithmus
     # normalize the cost matrix
     cost_matrix = (cost_matrix - cost_matrix.min()) / (cost_matrix.max() - cost_matrix.min())
-    cost_matrix += np.random.uniform(0, 0.0001, cost_matrix.shape)  # Kleine zufällige Störungen hinzufügen
 
     row_ind, col_ind = linear_sum_assignment(cost_matrix)
 
@@ -367,6 +376,12 @@ def graph_matcher(graph1, graph2, edit_path, matching):
             u1, v1 = map(int, edge1.split("-"))
             u2, v2 = map(int, edge2.split("-"))
             graph1.edges[u1, v1]["label"] = graph2.edges[u2, v2]["label"]
+        elif action.startswith("relabel r_edge"):
+            _, edges = action.split(":")
+            edge2, edge1 = edges.split("->")
+            u1, v1 = map(int, edge1.split("-"))
+            u2, v2 = map(int, edge2.split("-"))
+            graph1.edges[u1, v1]["label"] = graph2.edges[u2, v2]["label"]
         elif action.startswith("delete edge"):
             _, edge = action.split(":")
             u, v = map(int, edge.split("-"))
@@ -398,22 +413,61 @@ def graph_matcher(graph1, graph2, edit_path, matching):
     return graph1
 
 def isomorph_check(graph1, graph2):
+    # Überprüfe, ob die Anzahl der Knoten und Kanten gleich ist
     if len(graph1.nodes) != len(graph2.nodes) or len(graph1.edges) != len(graph2.edges):
         return False
 
-    for node1, node2 in zip(sorted(graph1.nodes), sorted(graph2.nodes)):
-        if graph1.nodes[node1]["label"] != graph2.nodes[node2]["label"]:
-            return False
+    # Verwende die eingebaute Funktion von NetworkX, um die Isomorphie zu überprüfen
+    return nx.is_isomorphic(graph1, graph2, node_match=node_match, edge_match=edge_match)
 
-    for (u1, v1), (u2, v2) in zip(sorted(graph1.edges), sorted(graph2.edges)):
-        if graph1.edges[u1, v1]["label"] != graph2.edges[u2, v2]["label"]:
-            return False
+def node_match(n1, n2):
+    # Überprüfe, ob die Labels der Knoten übereinstimmen
+    return n1['label'] == n2['label']
 
-    return True
+def edge_match(e1, e2):
+    # Überprüfe, ob die Labels der Kanten übereinstimmen
+    return e1['label'] == e2['label']
 
 
+def print_two_graphs(graph1, graph2, layout='spring'):
 
-# OLD CODE WHICH USED SDTED AS GED CALCULATION
+    graph1_label = graph1.graph['id']
+    graph2_label = graph2.graph['id']
+
+    fig, axes = plt.subplots(1, 2, figsize=(30, 15))
+
+    if layout == 'spring':
+        pos1 = nx.spring_layout(graph1)
+        pos2 = nx.spring_layout(graph2)
+    elif layout == 'circular':
+        pos1 = nx.circular_layout(graph1)
+        pos2 = nx.circular_layout(graph2)
+    elif layout == 'kamada_kawai':
+        pos1 = nx.kamada_kawai_layout(graph1)
+        pos2 = nx.kamada_kawai_layout(graph2)
+    else:
+        raise ValueError("Unsupported layout type. Use 'spring', 'circular', or 'kamada_kawai'.")
+
+    # Plot graph1
+    node_labels1 = nx.get_node_attributes(graph1, 'label')
+    edge_labels1 = nx.get_edge_attributes(graph1, 'label')
+    nx.draw(graph1, pos1, with_labels=True, labels=node_labels1, ax=axes[0])
+    nx.draw_networkx_edge_labels(graph1, pos1, edge_labels=edge_labels1, ax=axes[0])
+    axes[0].set_title("Graph " + str(graph1_label))
+
+    # Plot graph2
+    node_labels2 = nx.get_node_attributes(graph2, 'label')
+    edge_labels2 = nx.get_edge_attributes(graph2, 'label')
+    nx.draw(graph2, pos2, with_labels=True, labels=node_labels2, ax=axes[1])
+    nx.draw_networkx_edge_labels(graph2, pos2, edge_labels=edge_labels2, ax=axes[1])
+    axes[1].set_title("Graph " + str(graph2_label))
+
+    plt.show()
+
+    return None
+
+
+# OLD CODE WHICH USED SDTED AS GED CALCULATION (IGNORE THIS)
 
 # def calculate_GED_parallel(graph1, graph2, nt_dict, cache):
 #     min_GED = float("inf")

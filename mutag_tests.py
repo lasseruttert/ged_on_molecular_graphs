@@ -56,48 +56,30 @@ for graph_id in node_to_graph["graph_id"].unique():
         graphs[graph_id].edges[source, target]["label"] = edge_label
         graphs[graph_id].edges[target, source]["label"] = edge_label  # Ungerichtete Kante (symmetrisch)
 
-def print_two_graphs(graph1, graph2, layout='spring'):
-    fig, axes = plt.subplots(1, 2, figsize=(30, 15))
-
-    if layout == 'spring':
-        pos1 = nx.spring_layout(graph1)
-        pos2 = nx.spring_layout(graph2)
-    elif layout == 'circular':
-        pos1 = nx.circular_layout(graph1)
-        pos2 = nx.circular_layout(graph2)
-    elif layout == 'kamada_kawai':
-        pos1 = nx.kamada_kawai_layout(graph1)
-        pos2 = nx.kamada_kawai_layout(graph2)
-    else:
-        raise ValueError("Unsupported layout type. Use 'spring', 'circular', or 'kamada_kawai'.")
-
-    # Plot graph1
-    node_labels1 = nx.get_node_attributes(graph1, 'label')
-    edge_labels1 = nx.get_edge_attributes(graph1, 'label')
-    nx.draw(graph1, pos1, with_labels=True, labels=node_labels1, ax=axes[0])
-    nx.draw_networkx_edge_labels(graph1, pos1, edge_labels=edge_labels1, ax=axes[0])
-    axes[0].set_title("Graph 1")
-
-    # Plot graph2
-    node_labels2 = nx.get_node_attributes(graph2, 'label')
-    edge_labels2 = nx.get_edge_attributes(graph2, 'label')
-    nx.draw(graph2, pos2, with_labels=True, labels=node_labels2, ax=axes[1])
-    nx.draw_networkx_edge_labels(graph2, pos2, edge_labels=edge_labels2, ax=axes[1])
-    axes[1].set_title("Graph 2")
-
-    plt.show()
-
-    return None
 
 
-# print(main.calculate_cost_matrix(graphs))
-# with np.printoptions(precision=4, suppress=True, floatmode = 'fixed', formatter={'float': '{:0.4f}'.format}, linewidth=100):
-#     print(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}, 10, 0)[0])
 
-cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:5]}, 10, 0)
-# print(cost_matrix)
-# print(edit_matrix)
+if __name__ == "__main__":
+    n = 188
 
-new_graph = main.graph_matcher(graphs[2], graphs[3], edit_matrix[1,2], matchings[1,2])
-print_two_graphs(graphs[3], new_graph)
+    cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:n]}, 10, 0)
 
+    print(cost_matrix)
+
+    for i in range(n): 
+        for j in range(n):
+            if i == j:
+                continue
+            if i > j:
+                continue
+            new_graph = main.graph_matcher(graphs[i+1], graphs[j+1], edit_matrix[i,j], matchings[i,j])
+            current_bool = main.isomorph_check(graphs[j+1], new_graph)
+            if not current_bool:
+                print(edit_matrix[i,j])
+                print(matchings[i,j])
+                main.print_two_graphs(graphs[j+1], new_graph)
+                print(i+1, j+1)
+                print("\n")
+                print("\n")
+
+    print("Done")
