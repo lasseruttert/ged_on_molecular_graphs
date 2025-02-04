@@ -58,13 +58,8 @@ for graph_id in node_to_graph["graph_id"].unique():
 
 # print(main.calculate_cost_matrix(graphs))
 with np.printoptions(precision=4, suppress=True, floatmode = 'fixed', formatter={'float': '{:0.4f}'.format}, linewidth=100):
-    print(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:2]}, 10, 1))
-    #plot graph 1 and 2
-plt.subplot(121)
-nx.draw(graphs[1], with_labels=True, font_weight='bold')
-plt.subplot(122)
-nx.draw(graphs[2], with_labels=True, font_weight='bold')
-plt.show()
+    print(main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:10]}, 10, 0)[0])
+
 
     #compare to NX GED
     # nx_ged = np.zeros((10, 10))

@@ -36,7 +36,7 @@ class TestMain(unittest.TestCase):
         test_graphs[2] = graph2
 
         expected_output = np.zeros((2, 2))
-        test_output = main.calculate_cost_matrix(test_graphs)
+        test_output = main.calculate_cost_matrix(test_graphs)[0]
 
         npt.assert_array_equal(expected_output, test_output)
 
@@ -67,7 +67,7 @@ class TestMain(unittest.TestCase):
         test_graphs[2] = graph2
 
         expected_output = np.matrix([[0, 1], [1, 0]])
-        test_output = main.calculate_cost_matrix(test_graphs)
+        test_output = main.calculate_cost_matrix(test_graphs)[0]
 
         npt.assert_array_equal(expected_output, test_output)
 
@@ -98,7 +98,7 @@ class TestMain(unittest.TestCase):
         test_graphs[2] = graph2
 
         expected_output = np.matrix([[0, 1], [1, 0]])
-        test_output = main.calculate_cost_matrix(test_graphs)
+        test_output = main.calculate_cost_matrix(test_graphs)[0]
 
         npt.assert_array_equal(expected_output, test_output)
     
@@ -126,7 +126,7 @@ class TestMain(unittest.TestCase):
         test_graphs[2] = graph2
 
         expected_output = np.matrix([[0, 6], [6, 0]])
-        test_output = main.calculate_cost_matrix(test_graphs)
+        test_output = main.calculate_cost_matrix(test_graphs)[0]
 
         npt.assert_array_equal(expected_output, test_output)
 
@@ -152,7 +152,7 @@ class TestMain(unittest.TestCase):
         test_graphs[2] = graph2
 
         expected_output = np.matrix([[0, 4], [4, 0]])
-        test_output = main.calculate_cost_matrix(test_graphs)
+        test_output = main.calculate_cost_matrix(test_graphs)[0]
 
         npt.assert_array_equal(expected_output, test_output)
 
