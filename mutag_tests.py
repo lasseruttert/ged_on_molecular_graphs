@@ -60,11 +60,18 @@ for graph_id in node_to_graph["graph_id"].unique():
 
 
 if __name__ == "__main__":
-    n = 188
+    n = 10
 
     cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:n]}, 10, 0)
 
     print(cost_matrix)
+
+    # avg value of cost_matrix
+    print(np.mean(cost_matrix))
+
+    # highest difference in cost_matrix
+    # find min, not on diagonal
+    print(np.max(cost_matrix) - np.min(cost_matrix[np.nonzero(cost_matrix)]))
 
     for i in range(n): 
         for j in range(n):

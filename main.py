@@ -8,10 +8,22 @@ from functools import lru_cache
 import matplotlib.pyplot as plt
 import concurrent.futures
 
-def encode_graph(graph):
-    node_labels = "".join(sorted([f"{graph.nodes[n]['label']}" for n in graph.nodes]))
-    edge_labels = "".join(sorted([f"{graph.nodes[u]['label']}-{graph.nodes[v]['label']}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
-    return hash(node_labels + edge_labels)
+def encode_graph(graph, node=None):
+    # node_labels = "".join(sorted([f"{graph.nodes[n]['label']}" for n in graph.nodes]))
+    # edge_labels = "".join(sorted([f"{graph.nodes[u]['label']}-{graph.nodes[v]['label']}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
+    # return hash(node_labels + edge_labels)
+    
+    def canonical_encoding(graph, node = None):
+        if node is None:
+            node = next(iter(graph))  # Starte mit einem beliebigen Knoten
+        
+        # Rekursiv die Kinderknoten kodieren
+        children = sorted([canonical_encoding(graph, child) for child in graph.neighbors(node) if graph.nodes[child]["height"] > graph.nodes[node]["height"]])
+        
+        # Knotenlabel und kodierte Kinder kombinieren
+        return (f"({graph.nodes[node]['label']}" + "".join(children) + ")")
+    
+    return hash(canonical_encoding(graph))
 
 def build_nt(graph, root, height, k):
     tree = nx.DiGraph()
@@ -109,9 +121,9 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
 
                 if child1_label != "pad" or child2_label != "pad":
                     if child1_label != "pad" and child2_label == "pad":
-                        cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + 1) * (1/(1+depth+1))
+                        cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + 1) #* (1/(1+depth+1))
                     elif child2_label != "pad" and child1_label == "pad":
-                        cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + 1) * (1/(1+depth+1))
+                        cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + 1) #* (1/(1+depth+1))
                     else:
                         temp_cost = 1 if hash(tree1_padded.edges[root1, child1_ident]["label"]) != hash(tree2_padded.edges[root2, child2_ident]["label"]) else 0
                         
@@ -140,7 +152,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
 
         cache[key] = result
 
-        return result
+        return result 
 
     result = recusive_sdted(treee1, treee2, 1)
     cache[(treee1.graph["encoding"], treee2.graph["encoding"])] = result
@@ -159,7 +171,7 @@ def calculate_costs(tree):
                 if neighbor not in visited and tree.nodes[neighbor]["height"] > tree.nodes[current_node]["height"]:
                     queue.append(neighbor)
                     visited.add(neighbor)
-                    cost += 2
+                    cost += 2 * (1/(1+tree.nodes[neighbor]["height"]+1))
         tree.nodes[node]["cost"] = cost
 
     return tree
