@@ -8,11 +8,42 @@ from functools import lru_cache
 import matplotlib.pyplot as plt
 import concurrent.futures
 
-def encode_graph(graph, node=None):
-    # node_labels = "".join(sorted([f"{graph.nodes[n]['label']}" for n in graph.nodes]))
-    # edge_labels = "".join(sorted([f"{graph.nodes[u]['label']}-{graph.nodes[v]['label']}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
-    # return hash(node_labels + edge_labels)
-    
+# * These functions are not of any use in our implementation, but it is possible to use them to calculate the costs of the different operations in the GED calculation
+# * For example, the cost of relabeling a edge could be different based on the label of the edge and its nodes, this is especially interesting in molecular graphs, as you can consider the energy of the bond between the atoms as the cost of relabeling the edge
+
+def cost_insert_node(node_label):
+    return 1
+
+def cost_delete_node(node_label):
+    return 1
+
+def cost_insert_edge(edge_label):
+    return 1
+
+def cost_delete_edge(edge_label):
+    return 1
+
+def cost_relabel_node(node_label1, node_label2):
+    return 1
+
+def cost_relabel_edge(edge_label1, edge_label2):
+    return 1
+
+# ? The following function is our implementation of canonical encoding of a tree, which is used to encode the neighborhood trees in the SDTED calculation
+# ? As seen below, a different version of the encoding sacrifices some structural information, but is much faster to compute
+
+def encode_graph(graph):
+    """
+    * encodes a graph via canonical encoding and hashing
+
+    * param graph: a networkx graph
+
+    * return: a hash of the canonical encoding
+
+    * description:
+    * The function encodes a graph via a canonical encoding, which is a string representation of the graph
+    * The canonical encoding is then hashed to a unique hash value
+    """
     def canonical_encoding(graph, node = None):
         if node is None:
             node = next(iter(graph))  # Starte mit einem beliebigen Knoten
@@ -25,7 +56,30 @@ def encode_graph(graph, node=None):
     
     return hash(canonical_encoding(graph))
 
+
+# def encode_graph(graph):
+    # node_labels = "".join(sorted([f"{graph.nodes[n]['label']}" for n in graph.nodes]))
+    # edge_labels = "".join(sorted([f"{graph.nodes[u]['label']}-{graph.nodes[v]['label']}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
+    # return hash(node_labels + edge_labels)
+
+
+# ? The following functions build_nt and sdted were implemented based on the given pseudocode in the paper "Approximating the Graph Edit Distance with Compact Neighborhood Representations"
+
 def build_nt(graph, root, height, k):
+    """
+    * builds a neighborhood tree of a graph with a given root node, height and k
+
+    * param graph: a networkx graph
+    * param root: a node in the graph to be the root of the neighborhood tree
+    * param height: the height of the neighborhood tree
+    * param k: the maximum height difference for redundancy elimination
+
+    * return: a networkx DiGraph object representing the neighborhood tree
+    
+    * description:
+    * The function builds a neighborhood tree of a graph with a given root node, height and k
+    TODO add more description
+    """
     tree = nx.DiGraph()
     tree.add_node(root, label=graph.nodes[root]["label"], height=0)
     D = {}
@@ -136,9 +190,9 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
 
 
         # calculate the cost of the roots
-        cost_root = 1 
-        if tree1_padded.nodes[root1]["label"] == tree2_padded.nodes[root2]["label"]:
-            cost_root = 0
+        cost_root = 0 
+        if tree1_padded.nodes[root1]["label"] != tree2_padded.nodes[root2]["label"]:
+            cost_root = 1
 
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
 
@@ -158,6 +212,12 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
     cache[(treee1.graph["encoding"], treee2.graph["encoding"])] = result
     return result
 
+# ? The following functions are used to :
+# ? 1. frontload the costs of insertion and deletion of nodes in the neighborhood trees
+# ? 2. create a subgraph of the neighborhood tree, starting from a specific node
+# ? 3. create a dictionary of subgraphs for each node in the neighborhood tree
+# ? 4. create a dictionary of neighborhood trees for each node in the graph
+# ? while this takes a lot of time upfront, it makes the calculations of the SDTED much faster
 
 def calculate_costs(tree):
     for node in sorted(tree.nodes):
@@ -219,6 +279,7 @@ def create_nt_dict(graphs, height, k):
             nt_dict[(graph_id, node)] = calculate_costs(nt), create_subgraph_dict(nt)
     return nt_dict
 
+# ? The following functions are used to calculate the cost matrix, edit paths and matchings between the graphs
 
 def derive_edit_path(graph1, graph2, row_ind, col_ind):
     edit_path = []
@@ -302,13 +363,10 @@ def calculate_GED_bgm(graph1, graph2, nt_dict, cache):
     n1, n2 = len(graph1.nodes), len(graph2.nodes)
     cost_matrix = np.full((n1, n2), np.inf)  # Initialisiere mit hohen Kosten
 
-    # nodes1 = list(graph1.nodes)
-    # nodes2 = list(graph2.nodes)
-
     nodes1 = sorted(graph1.nodes)
     nodes2 = sorted(graph2.nodes)
 
-    max_value = 0
+    max_value = 0 
 
     for i, node1 in enumerate(nodes1):
         for j, node2 in enumerate(nodes2):
@@ -364,6 +422,7 @@ def calculate_cost_matrix(graphs, height=8, k=0):
     print(f"Total time: {t.time() - basetime}")
     return cost_matrix, edit_paths, matchings
 
+# ? The following functions are used to check if the edit path is valid and to apply the edit path to the graph, to check if the graphs are isomorphic and to print the two graphs
 
 def graph_matcher(graph1, graph2, edit_path, matching):
     # Erzeuge Kopien der Graphen
@@ -481,53 +540,53 @@ def print_two_graphs(graph1, graph2, layout='spring'):
 
 # OLD CODE WHICH USED SDTED AS GED CALCULATION (IGNORE THIS)
 
-# def calculate_GED_parallel(graph1, graph2, nt_dict, cache):
-#     min_GED = float("inf")
-#     min_edit_path = []
-#     with concurrent.futures.ThreadPoolExecutor() as executor:
-#         futures = []
-#         for node1 in graph1.nodes:
-#             for node2 in graph2.nodes:
-#                 nt1 = nt_dict[(graph1.graph["id"], node1)][0]
-#                 nt2 = nt_dict[(graph2.graph["id"], node2)][0]
-#                 nt1_subgraph = nt_dict[(graph1.graph["id"], node1)][1]
-#                 nt2_subgraph = nt_dict[(graph2.graph["id"], node2)][1]
+# // def calculate_GED_parallel(graph1, graph2, nt_dict, cache):
+# //     min_GED = float("inf")
+# //     min_edit_path = []
+# //     with concurrent.futures.ThreadPoolExecutor() as executor:
+# //         futures = []
+# //         for node1 in graph1.nodes:
+# //             for node2 in graph2.nodes:
+# //                 nt1 = nt_dict[(graph1.graph["id"], node1)][0]
+# //                 nt2 = nt_dict[(graph2.graph["id"], node2)][0]
+# //                 nt1_subgraph = nt_dict[(graph1.graph["id"], node1)][1]
+# //                 nt2_subgraph = nt_dict[(graph2.graph["id"], node2)][1]
 
-#                 diff_nodes = abs(len(nt1.nodes) - len(nt2.nodes))
-#                 diff_edges = abs(len(nt1.edges) - len(nt2.edges))
+# //                 diff_nodes = abs(len(nt1.nodes) - len(nt2.nodes))
+# //                 diff_edges = abs(len(nt1.edges) - len(nt2.edges))
 
-#                 if diff_nodes/2 >= min_GED:
-#                     continue
-#                 if diff_edges >= min_GED:
-#                     continue
+# //                 if diff_nodes/2 >= min_GED:
+# //                     continue
+# //                 if diff_edges >= min_GED:
+# //                     continue
 
-#                 futures.append(executor.submit(sdted, nt1, nt2, nt1_subgraph, nt2_subgraph, cache))
+# //                 futures.append(executor.submit(sdted, nt1, nt2, nt1_subgraph, nt2_subgraph, cache))
 
-#         for future in concurrent.futures.as_completed(futures):
-#             GED = future.result()[0]
-#             if GED < min_GED:
-#                 min_GED = GED
-#                 min_edit_path = future.result()[1]
+# //         for future in concurrent.futures.as_completed(futures):
+# //             GED = future.result()[0]
+# //             if GED < min_GED:
+# //                 min_GED = GED
+# //                 min_edit_path = future.result()[1]
 
-#     return (min_GED, min_edit_path)
+# //     return (min_GED, min_edit_path)
 
-# def calculate_cost_matrix(graphs, height=8, k=0):
-#     basetime = t.time()
-#     cache = {}
-#     nt_dict = create_nt_dict(graphs, height, k)
+# // def calculate_cost_matrix(graphs, height=8, k=0):
+# //     basetime = t.time()
+# //     cache = {}
+# //     nt_dict = create_nt_dict(graphs, height, k)
 
-#     graph_ids = list(graphs.keys())
-#     cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0, dtype=object)
-#     edit_matrix = np.full((len(graph_ids), len(graph_ids)), 0, dtype=object)
+# //     graph_ids = list(graphs.keys())
+# //     cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0, dtype=object)
+# //     edit_matrix = np.full((len(graph_ids), len(graph_ids)), 0, dtype=object)
 
-#     with concurrent.futures.ThreadPoolExecutor() as executor:
-#         futures = {}
-#         for i, j in combinations(range(len(graph_ids)), 2):
-#             futures[(i, j)] = executor.submit(calculate_GED_parallel, graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
+# //     with concurrent.futures.ThreadPoolExecutor() as executor:
+# //         futures = {}
+# //         for i, j in combinations(range(len(graph_ids)), 2):
+# //             futures[(i, j)] = executor.submit(calculate_GED_parallel, graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
 
-#         for (i, j), future in futures.items():
-#             cost_matrix[i, j] = cost_matrix[j, i] = future.result()[0]
-#             edit_matrix[i, j] = edit_matrix[j, i] = future.result()[1]
+# //         for (i, j), future in futures.items():
+# //             cost_matrix[i, j] = cost_matrix[j, i] = future.result()[0]
+# //             edit_matrix[i, j] = edit_matrix[j, i] = future.result()[1]
 
-#     print(f"Total time: {t.time() - basetime}")
-#     return np.matrix(cost_matrix)
+# //     print(f"Total time: {t.time() - basetime}")
+# //     return np.matrix(cost_matrix)
