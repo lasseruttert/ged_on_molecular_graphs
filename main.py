@@ -33,37 +33,37 @@ def cost_relabel_edge(edge_label1, edge_label2):
 # ? The following function is our implementation of canonical encoding of a tree, which is used to encode the neighborhood trees in the SDTED calculation
 # ? As seen below, a different version of the encoding sacrifices some structural information, but is much faster to compute
 
-def encode_graph(graph):
-    """
-    * encodes a graph via canonical encoding and hashing
+# def encode_graph(graph):
+#     """
+#     * encodes a graph via canonical encoding and hashing
 
-    * param graph: a networkx graph
+#     * param graph: a networkx graph
 
-    * return: a hash of the canonical encoding
+#     * return: a hash of the canonical encoding
 
-    * description:
-    * The function encodes a graph via a canonical encoding, which is a string representation of the graph
-    * The string has the following format: (label(children))
-    * A canonical encoding is built by recursively encoding the children of a node
-    * Two canonical encodings are only equal if the graphs are isomorphic
-    * The canonical encoding is then hashed to a unique hash value
-    """
-    def canonical_encoding(graph, node = None):
-        # start with the first node if no node is given
-        if node is None:
-            node = next(iter(graph)) 
-        # encode the children of the node recursively
-        children = sorted([canonical_encoding(graph, child) for child in graph.neighbors(node) if graph.nodes[child]["height"] > graph.nodes[node]["height"]])
-        # reconstruct the canonical encoding of the node and its children
-        return (f"({graph.nodes[node]['label']}" + "".join(children) + ")")
+#     * description:
+#     * The function encodes a graph via a canonical encoding, which is a string representation of the graph
+#     * The string has the following format: (label(children))
+#     * A canonical encoding is built by recursively encoding the children of a node
+#     * Two canonical encodings are only equal if the graphs are isomorphic
+#     * The canonical encoding is then hashed to a unique hash value
+#     """
+#     def canonical_encoding(graph, node = None):
+#         # start with the first node if no node is given
+#         if node is None:
+#             node = next(iter(graph)) 
+#         # encode the children of the node recursively
+#         children = sorted([canonical_encoding(graph, child) for child in graph.neighbors(node) if graph.nodes[child]["height"] > graph.nodes[node]["height"]])
+#         # reconstruct the canonical encoding of the node and its children
+#         return (f"({graph.nodes[node]['label']}" + "".join(children) + ")")
     
-    return hash(canonical_encoding(graph))
+#     return hash(canonical_encoding(graph))
 
 
-#// def encode_graph(graph):
-    #// node_labels = "".join(sorted([f"{graph.nodes[n]['label']}" for n in graph.nodes]))
-    #// edge_labels = "".join(sorted([f"{graph.nodes[u]['label']}-{graph.nodes[v]['label']}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
-    #// return hash(node_labels + edge_labels)
+def encode_graph(graph):
+    node_labels = "".join(sorted([f"{graph.nodes[n]['label']}" for n in graph.nodes]))
+    edge_labels = "".join(sorted([f"{graph.nodes[u]['label']}-{graph.nodes[v]['label']}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
+    return hash(node_labels + edge_labels)
 
 
 # ? The following functions build_nt and sdted were implemented based on the given pseudocode in the paper "Approximating the Graph Edit Distance with Compact Neighborhood Representations"
@@ -181,6 +181,9 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         tree1_padded = tree1
         tree2_padded = tree2
 
+        root1 = next(iter(tree1.nodes)) # get the root of the first tree
+        root2 = next(iter(tree2.nodes)) # get the root of the second tree
+
         if tree1.degree[next(iter(tree1.nodes))] != tree2.degree[next(iter(tree2.nodes))]:
             tree1_padded = pad(tree1, n)
             tree2_padded = pad(tree2, n)
@@ -188,8 +191,8 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         # create the cost matrix as n x n matrix
         cost_matrix = np.zeros((n, n))
 
-        root1 = next(iter(tree1_padded.nodes)) # get the root of the first tree
-        root2 = next(iter(tree2_padded.nodes)) # get the root of the second tree
+        # root1 = next(iter(tree1_padded.nodes)) # get the root of the first tree
+        # root2 = next(iter(tree2_padded.nodes)) # get the root of the second tree
 
         #// children1 = sorted(tree1_padded.neighbors(next(iter(tree1_padded.nodes))))
         #// children2 = sorted(tree2_padded.neighbors(next(iter(tree2_padded.nodes))))
@@ -524,7 +527,8 @@ def calculate_GED_bgm(graph1, graph2, nt_dict = None, cache = {}):
             cost_matrix[i, j] = current_result
 
     # normalize the cost matrix
-    cost_matrix = (cost_matrix - cost_matrix.min()) / (cost_matrix.max() - cost_matrix.min())
+    if cost_matrix.max() != cost_matrix.min():
+        cost_matrix = (cost_matrix - cost_matrix.min()) / (cost_matrix.max() - cost_matrix.min())
     # calculate the Hungarian Algorithm matching
     row_ind, col_ind = linear_sum_assignment(cost_matrix)
     # get a list of matched nodes
