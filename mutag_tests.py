@@ -8,6 +8,8 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 import main as main
 
+basetime = t.time()
+
 # Pfad zu den Dateien
 path = "G:\Meine Ablage\PG\ged_on_molecular_graphs\data\MUTAG"
 dataset_name = "MUTAG"
@@ -56,6 +58,7 @@ for graph_id in node_to_graph["graph_id"].unique():
         graphs[graph_id].edges[source, target]["label"] = edge_label
         graphs[graph_id].edges[target, source]["label"] = edge_label  # Ungerichtete Kante (symmetrisch)
 
+print(f"Loading the Graphs: {t.time() - basetime}s")
 
 
 
