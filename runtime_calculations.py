@@ -13,7 +13,7 @@ basetime = t.time()
 
 # Pfad zu den Dateien
 current_dir = os.path.dirname(__file__)
-dataset_name = "PTC_FM"
+dataset_name = "MUTAG"
 path = os.path.join(current_dir, "data", dataset_name)
 
 # Lade Adjacency-Matrix
@@ -124,23 +124,23 @@ if __name__ == "__main__":
     # plt.savefig(f"runtime_cost_matrix_{dataset_name}.png")
 
     # avg error
-    # heights = [1,2,3,4,5,6,7,8,9,10]
-    # error = []
-    # actual = 10
-    # for height in heights:
-    #     print(f"Height: {height}")
-    #     current_error = 0
-    #     for i in range(10):
-    #         _,_,calculated,_,_ = main.calculate_GED_bgm(graphs[2], graphs[3], height=height)
-    #         current_error += (abs(calculated - actual)/actual)
-    #     error.append(current_error / 10)
+    heights = [1,2,3,4,5,6,7,8,9,10]
+    error = []
+    actual = 10
+    for height in heights:
+        print(f"Height: {height}")
+        current_error = 0
+        for i in range(100):
+            _,_,calculated,_,_ = main.calculate_GED_bgm(graphs[1], graphs[2], height=height)
+            current_error += (abs(calculated - actual)/actual)
+        error.append(current_error / 100)
 
-    # # save a plot of the runtime, y axis is the runtime, x axis is height parameter
-    # plt.plot(heights, error)
-    # plt.xlabel("Height")
-    # plt.ylabel("Error")
-    # plt.title(f"Error of GED calculation: {dataset_name}")
+    # save a plot of the runtime, y axis is the runtime, x axis is height parameter
+    plt.plot(heights, error)
+    plt.xlabel("Height")
+    plt.ylabel("Error")
+    plt.title(f"Error of GED calculation: {dataset_name}")
 
-    # plt.savefig(f"error_ged_{dataset_name}.png")
+    plt.savefig(f"error_ged_{dataset_name}.png")
 
     print("Done")
