@@ -7,12 +7,14 @@ import random as r
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 import main as main
+import os
 
 basetime = t.time()
 
 # Pfad zu den Dateien
-path = "G:\Meine Ablage\PG\ged_on_molecular_graphs\data\MUTAG"
+current_dir = os.path.dirname(__file__)
 dataset_name = "MUTAG"
+path = os.path.join(current_dir, "data", dataset_name)
 
 # Lade Adjacency-Matrix
 edges = pd.read_csv(f"{path}\{dataset_name}_A.txt", header=None, sep=",")
@@ -93,3 +95,9 @@ if __name__ == "__main__":
                 print("\n")
 
     print("Done")
+
+    # TODO: more experiments
+    # * Graph Classification
+    # * Graph Clustering
+    # * Outlier Detection
+    # * compare with other algorithms
