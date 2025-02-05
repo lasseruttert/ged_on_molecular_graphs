@@ -33,37 +33,37 @@ def cost_relabel_edge(edge_label1, edge_label2):
 # ? The following function is our implementation of canonical encoding of a tree, which is used to encode the neighborhood trees in the SDTED calculation
 # ? As seen below, a different version of the encoding sacrifices some structural information, but is much faster to compute
 
-# def encode_graph(graph):
-#     """
-#     * encodes a graph via canonical encoding and hashing
-
-#     * param graph: a networkx graph
-
-#     * return: a hash of the canonical encoding
-
-#     * description:
-#     * The function encodes a graph via a canonical encoding, which is a string representation of the graph
-#     * The string has the following format: (label(children))
-#     * A canonical encoding is built by recursively encoding the children of a node
-#     * Two canonical encodings are only equal if the graphs are isomorphic
-#     * The canonical encoding is then hashed to a unique hash value
-#     """
-#     def canonical_encoding(graph, node = None):
-#         # start with the first node if no node is given
-#         if node is None:
-#             node = next(iter(graph)) 
-#         # encode the children of the node recursively
-#         children = sorted([canonical_encoding(graph, child) for child in graph.neighbors(node) if graph.nodes[child]["height"] > graph.nodes[node]["height"]])
-#         # reconstruct the canonical encoding of the node and its children
-#         return (f"({graph.nodes[node]['label']}" + "".join(children) + ")")
-    
-#     return hash(canonical_encoding(graph))
-
-
 def encode_graph(graph):
-    node_labels = "".join(sorted([f"{graph.nodes[n]['label']}" for n in graph.nodes]))
-    edge_labels = "".join(sorted([f"{graph.nodes[u]['label']}-{graph.nodes[v]['label']}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
-    return hash(node_labels + edge_labels)
+    """
+    * encodes a graph via canonical encoding and hashing
+
+    * param graph: a networkx graph
+
+    * return: a hash of the canonical encoding
+
+    * description:
+    * The function encodes a graph via a canonical encoding, which is a string representation of the graph
+    * The string has the following format: (label(children))
+    * A canonical encoding is built by recursively encoding the children of a node
+    * Two canonical encodings are only equal if the graphs are isomorphic
+    * The canonical encoding is then hashed to a unique hash value
+    """
+    def canonical_encoding(graph, node = None):
+        # start with the first node if no node is given
+        if node is None:
+            node = next(iter(graph)) 
+        # encode the children of the node recursively
+        children = sorted([canonical_encoding(graph, child) for child in graph.neighbors(node) if graph.nodes[child]["height"] > graph.nodes[node]["height"]])
+        # reconstruct the canonical encoding of the node and its children
+        return (f"({graph.nodes[node]['label']}" + "".join(children) + ")")
+    
+    return hash(canonical_encoding(graph))
+
+
+# def encode_graph(graph):
+#     node_labels = "".join(sorted([f"{graph.nodes[n]['label']}" for n in graph.nodes]))
+#     edge_labels = "".join(sorted([f"{graph.nodes[u]['label']}-{graph.nodes[v]['label']}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
+#     return hash(node_labels + edge_labels)
 
 
 # ? The following functions build_nt and sdted were implemented based on the given pseudocode in the paper "Approximating the Graph Edit Distance with Compact Neighborhood Representations"
@@ -488,7 +488,7 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
     return edit_path #// , edit_cost
 
 
-def calculate_GED_bgm(graph1, graph2, nt_dict = None, cache = {}):
+def calculate_GED_bgm(graph1, graph2, nt_dict = None, cache = {}, height=8, k=0):
     """
     * calculates the Graph Edit Distance (GED) between two graphs using the Hungarian Algorithm based on the SDTED as the cost function
 
@@ -507,7 +507,7 @@ def calculate_GED_bgm(graph1, graph2, nt_dict = None, cache = {}):
     * The function derives the edit path between the two graphs based on the Hungarian Algorithm matching and calculates the minimum GED
     """
     if nt_dict is None:
-        nt_dict = create_nt_dict({graph1.graph["id"]: graph1, graph2.graph["id"]: graph2}, 8, 0)
+        nt_dict = create_nt_dict({graph1.graph["id"]: graph1, graph2.graph["id"]: graph2}, height, k)
     
     n1, n2 = len(graph1.nodes), len(graph2.nodes)
     cost_matrix = np.full((n1, n2), np.inf)  # initialize the cost matrix with infinity

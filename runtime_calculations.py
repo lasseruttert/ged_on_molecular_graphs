@@ -13,7 +13,7 @@ basetime = t.time()
 
 # Pfad zu den Dateien
 current_dir = os.path.dirname(__file__)
-dataset_name = "MUTAG"
+dataset_name = "PTC_FM"
 path = os.path.join(current_dir, "data", dataset_name)
 
 # Lade Adjacency-Matrix
@@ -77,10 +77,70 @@ print(f"Loading the Graphs: {t.time() - basetime}s")
 
 
 if __name__ == "__main__":
-    total_time = 0
-    for i in range(10):
-        basetime = t.time()
-        main.calculate_GED_bgm(graphs[1], graphs[2])
-        total_time += t.time() - basetime
+    # total_time = 0
+    # for i in range(10):
+    #     basetime = t.time()
+    #     main.calculate_GED_bgm(graphs[1], graphs[2])
+    #     total_time += t.time() - basetime
 
-    print(f"Average time: {total_time / 10}s")
+    # print(f"Average time: {total_time / 10}s")
+
+    # heights = [1,2,3,4,5,6,7,8,9,10]
+    # runtimes = []
+    # for height in heights:
+    #     total_time = 0
+    #     for i in range(100):
+    #         x = r.randint(1, 188)
+    #         y = r.randint(1, 188)
+    #         basetime = t.time()
+    #         main.calculate_GED_bgm(graphs[x], graphs[y], height=height)
+    #         total_time += t.time() - basetime
+    #     runtimes.append(total_time / 100)
+
+    # # save a plot of the runtime, y axis is the runtime, x axis is height parameter
+    # plt.plot(heights, runtimes)
+    # plt.xlabel("Height")
+    # plt.ylabel("Runtime")
+    # plt.title(f"Runtime of GED calculation: {dataset_name}")
+
+    # plt.savefig(f"runtime_ged_{dataset_name}.png") 
+
+    # heights = [1,2,3,4,5,6,7,8,9,10]
+    # runtimes = []
+    # for height in heights:
+    #     total_time = 0
+    #     for i in range(10):
+    #         basetime = t.time()
+    #         main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:5]}, height=height, k=0)
+    #         total_time += t.time() - basetime
+    #     runtimes.append(total_time / 10)
+
+    # # save a plot of the runtime, y axis is the runtime, x axis is height parameter
+    # plt.plot(heights, runtimes)
+    # plt.xlabel("Height")
+    # plt.ylabel("Runtime")
+    # plt.title(f"Runtime of cost matrix calculation: {dataset_name}")
+
+    # plt.savefig(f"runtime_cost_matrix_{dataset_name}.png")
+
+    # avg error
+    # heights = [1,2,3,4,5,6,7,8,9,10]
+    # error = []
+    # actual = 10
+    # for height in heights:
+    #     print(f"Height: {height}")
+    #     current_error = 0
+    #     for i in range(10):
+    #         _,_,calculated,_,_ = main.calculate_GED_bgm(graphs[2], graphs[3], height=height)
+    #         current_error += (abs(calculated - actual)/actual)
+    #     error.append(current_error / 10)
+
+    # # save a plot of the runtime, y axis is the runtime, x axis is height parameter
+    # plt.plot(heights, error)
+    # plt.xlabel("Height")
+    # plt.ylabel("Error")
+    # plt.title(f"Error of GED calculation: {dataset_name}")
+
+    # plt.savefig(f"error_ged_{dataset_name}.png")
+
+    print("Done")
