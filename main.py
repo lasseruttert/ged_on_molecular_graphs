@@ -59,7 +59,7 @@ def encode_graph(graph):
     
     return hash(canonical_encoding(graph))
 
-
+# ! Dont use this
 # def encode_graph(graph):
 #     node_labels = "".join(sorted([f"{graph.nodes[n]['label']}" for n in graph.nodes]))
 #     edge_labels = "".join(sorted([f"{graph.nodes[u]['label']}-{graph.nodes[v]['label']}:{graph.edges[u, v]['label']}" for u, v in graph.edges]))
@@ -107,6 +107,7 @@ def build_nt(graph, root, height, k):
                         tree.add_edge(v, F[u], label=graph.edges[v, F[u]]["label"])
     # add the encoding of the tree to the graph
     tree.graph["encoding"] = encode_graph(tree)
+    tree.graph["id"] = graph.graph["id"]
 
     return tree
 
@@ -175,7 +176,9 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
             return cache[key]
 
         # n is the maximum number of children of the roots of the two trees
-        n = max(tree1.degree[next(iter(tree1.nodes))], tree2.degree[next(iter(tree2.nodes))])
+        children1 = sorted(tree1.neighbors(next(iter(tree1.nodes))))
+        children2 = sorted(tree2.neighbors(next(iter(tree2.nodes))))
+        n = max(len(children1), len(children2))
 
         # add undefined nodes to the trees, if the roots have a different number of children
         tree1_padded = tree1
@@ -250,7 +253,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
             cost += cost_matrix[row_ind[i]][col_ind[i]]
         
         # calculate the final result of the SDTED
-        result = (cost + cost_root) * (1/(1+depth)) # multiply by the depth factor to give less weight to nodes further away from the root
+        result = (cost + cost_root) * (10/(10+depth)) # multiply by the depth factor to give less weight to nodes further away from the root
         # add the result to the cache
         cache[key] = result
 
@@ -293,7 +296,7 @@ def calculate_costs(tree):
                 if neighbor not in visited and tree.nodes[neighbor]["height"] > tree.nodes[current_node]["height"]:
                     queue.append(neighbor)
                     visited.add(neighbor)
-                    cost += 2 * (1/(1+tree.nodes[neighbor]["height"]+1))
+                    cost += 2 * (10/(10+tree.nodes[neighbor]["height"]+1))
                     #// cost += cost_insert_edge(tree.edges[current_node, neighbor]["label"]) + cost_insert_node(tree.nodes[neighbor]["label"])
         # add the cost to the node
         tree.nodes[node]["cost"] = cost
@@ -336,6 +339,7 @@ def create_subgraph(graph, node):
 
     # add the encoding of the subgraph to the graph
     subgraph.graph["encoding"] = encode_graph(subgraph)
+    subgraph.graph["id"] = graph.graph["id"]
 
     return subgraph
 
@@ -741,26 +745,95 @@ def print_two_graphs(graph1, graph2, layout='spring'):
     else:
         raise ValueError("Unsupported layout type. Use 'spring', 'circular', or 'kamada_kawai'.")
 
+    # Create a dictionary that combines node IDs and labels
+    node_labels1 = {node: f"{node}: {label}" for node, label in nx.get_node_attributes(graph1, 'label').items()}
+    node_labels2 = {node: f"{node}: {label}" for node, label in nx.get_node_attributes(graph2, 'label').items()}
+    
     # Plot graph1
-    node_labels1 = nx.get_node_attributes(graph1, 'label')
     edge_labels1 = nx.get_edge_attributes(graph1, 'label')
     nx.draw(graph1, pos1, with_labels=True, labels=node_labels1, ax=axes[0])
     nx.draw_networkx_edge_labels(graph1, pos1, edge_labels=edge_labels1, ax=axes[0])
     axes[0].set_title("Graph " + str(graph1_label))
-
+    
     # Plot graph2
-    node_labels2 = nx.get_node_attributes(graph2, 'label')
     edge_labels2 = nx.get_edge_attributes(graph2, 'label')
     nx.draw(graph2, pos2, with_labels=True, labels=node_labels2, ax=axes[1])
     nx.draw_networkx_edge_labels(graph2, pos2, edge_labels=edge_labels2, ax=axes[1])
     axes[1].set_title("Graph " + str(graph2_label))
-
+    
     plt.show()
-
+    
     return None
 
 
+def standard_bgm(graph1, graph2):
+    """
+    * calculates the Graph Edit Distance (GED) between two graphs using the Hungarian Algorithm based on the standard cost function
 
+    * param graph1: a networkx Graph object representing the first graph
+    * param graph2: a networkx Graph object representing the second graph
+
+    * return: the row indices, column indices, the minimum GED, the edit path and the matching between the two graphs
+
+    * description:
+    TODO
+    """
+    nodes1 = sorted(graph1.nodes)
+    nodes2 = sorted(graph2.nodes)
+
+    n1, n2 = len(nodes1), len(nodes2)
+    cost_matrix = np.full((n1, n2), np.inf)  # Initialisiere hohe Kosten
+    
+    for i, u in enumerate(nodes1):
+        for j, v in enumerate(nodes2):
+            label_cost = 1 if graph1.nodes[u]["label"] != graph2.nodes[v]["label"] else 0
+            neighbor_cost = abs(len(list(graph1.neighbors(u))) - len(list(graph2.neighbors(v))))
+            cost_matrix[i, j] = label_cost + neighbor_cost
+
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+    matching = [(nodes1[i], nodes2[j]) for i, j in zip(row_ind, col_ind)]
+    edit_path = derive_edit_path(graph1, graph2, row_ind, col_ind)
+
+    min_ged = len(edit_path)
+
+    return row_ind, col_ind, min_ged, edit_path, matching
+
+def standard_bgm_matrix(graphs):
+    """
+    * calculates the GED cost matrix between a set of graphs using the Hungarian Algorithm based on the standard cost function
+
+    * param graphs: a dictionary containing networkx Graph objects representing the graphs
+    
+    * return: the GED cost matrix between the graphs, the edit paths and the matchings between the graphs
+
+    * description:
+    TODO
+    """
+    basetime = t.time()
+
+    # create the cost matrix, edit paths and matchings
+    graph_ids = list(graphs.keys())
+    cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0)
+    edit_paths = {}
+    matchings = {}
+
+    # use concurrent.futures to parallelize the calculation of the GED cost matrix
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {}
+        # calculate the GED between all pairs of graphs
+        for i, j in combinations(range(len(graph_ids)), 2):
+            futures[(i, j)] = executor.submit(standard_bgm, graphs[graph_ids[i]], graphs[graph_ids[j]])
+
+        # get the results of the futures and store them in the cost matrix, edit paths and matchings
+        for (i, j), future in futures.items():
+            row_ind, col_ind, min_GED, edit_path, matching = future.result()
+            cost_matrix[i, j] = cost_matrix[j, i] = min_GED
+            edit_paths[(i, j)] = edit_paths[(j, i)] = edit_path
+            matchings[(i, j)] = matchings[(j, i)] = matching
+
+    print(f"Calculating the cost matrix: {t.time() - basetime}s")
+    print("\n")
+    return cost_matrix, edit_paths, matchings
 
 
 

@@ -13,7 +13,7 @@ basetime = t.time()
 
 # Pfad zu den Dateien
 current_dir = os.path.dirname(__file__)
-dataset_name = "PTC_FM"
+dataset_name = "MUTAG"
 path = os.path.join(current_dir, "data", dataset_name)
 
 # Lade Adjacency-Matrix
@@ -75,67 +75,72 @@ for graph_id in node_to_graph["graph_id"].unique():
 
 print(f"Loading the Graphs: {t.time() - basetime}s")
 
+def cluster_graphs(graphs, cost_matrix):
+    graphss = graphs.copy()
+    # get all graph labels
+    graph_labels = [graphss[key].graph["label"] for key in graphss.keys()]
+
+    # create a cluster for every label
+    clusters = {label: [] for label in set(graph_labels)}
+
+    to_delete = []
+    for label in set(graph_labels):
+        for graph_id in list(graphss.keys()):  # `list()` macht eine Kopie der Keys
+            if graphss[graph_id].graph["label"] == label:
+                clusters[label].append(graph_id)
+                to_delete.append(graph_id)  # Merke den zu löschenden Graphen
+                break
+    for graph_id in to_delete:
+        del graphss[graph_id]
+
+
+
+    for i, graph_id in enumerate(graphss.keys()):
+        # find the smallest distance to each cluster
+        distances = []
+        for cluster in clusters.values():
+            cluster_cost = 0
+            for cluster_graph_id in cluster:
+                cluster_cost += cost_matrix[graph_id - 1, cluster_graph_id - 1]
+            distances.append(cluster_cost/len(cluster))
+        # add the graph to the cluster with the smallest distance
+        label = graphs[graph_id].graph["label"]  # Hole das Label des Graphen
+        clusters[label].append(graph_id)
+
+
+    return clusters
 
 if __name__ == "__main__":
     n = 20
 
-    cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:n]}, 10, 0)
+    print("CNT")
+    used_graphs = {key: graphs[key] for key in list(graphs.keys())[:n]}
+    cost_matrixs = main.calculate_cost_matrix(used_graphs)[0]
+    print(np.mean(cost_matrixs))  # Sollte <class 'numpy.ndarray'> sein, nicht <class 'list'>
 
-    print(cost_matrix)
+    clusters = cluster_graphs(used_graphs, cost_matrixs)
+    
+    for cluster_label, cluster_graphss in clusters.items():
+        print(f"Cluster {cluster_label}")
+        print(cluster_graphss)
+        correct = 0
+        for graph_id in cluster_graphss:
+            correct += int(graphs[graph_id].graph["label"] == cluster_label)
+        print(f"Correct: {correct}/{len(cluster_graphss)}")
 
-    # avg value of cost_matrix
-    print(np.mean(cost_matrix))
+    print("BGM")
+    used_graphs = {key: graphs[key] for key in list(graphs.keys())[:n]}    
+    cost_matrixx = main.standard_bgm_matrix(used_graphs)[0]
+    print(np.mean(cost_matrixx))  # Sollte <class 'numpy.ndarray'> sein, nicht <class 'list'>
 
-    # highest difference in cost_matrix
-    # find min, not on diagonal
-    print(np.max(cost_matrix) - np.min(cost_matrix[np.nonzero(cost_matrix)]))
+    clusters = cluster_graphs(used_graphs, cost_matrixx)
 
-    for i in range(n): 
-        for j in range(n):
-            if i == j:
-                continue
-            if i > j:
-                continue
-            new_graph = main.graph_matcher(graphs[i+1], graphs[j+1], edit_matrix[i,j], matchings[i,j])
-            current_bool = main.isomorph_check(graphs[j+1], new_graph)
-            if not current_bool:
-                print(edit_matrix[i,j])
-                print(matchings[i,j])
-                main.print_two_graphs(graphs[j+1], new_graph)
-                print(i+1, j+1)
-                print("\n")
-                print("\n")
+    for cluster_label, cluster_graphs in clusters.items():
+        print(f"Cluster {cluster_label}")
+        print(cluster_graphs)
+        correct = 0
+        for graph_id in cluster_graphs:
+            correct += int(graphs[graph_id].graph["label"] == cluster_label)
+        print(f"Correct: {correct}/{len(cluster_graphs)}")
 
-    bgm_cost_matrix, bgm_edit_matrix, bgm_matchings = main.standard_bgm_matrix({k: graphs[k] for k in list(graphs)[:n]})
-
-    print(bgm_cost_matrix)
-
-    # avg value of cost_matrix
-    print(np.mean(bgm_cost_matrix))
-
-    # highest difference in cost_matrix
-    # find min, not on diagonal
-    print(np.max(bgm_cost_matrix) - np.min(bgm_cost_matrix[np.nonzero(bgm_cost_matrix)]))
-
-    for i in range(n): 
-        for j in range(n):
-            if i == j:
-                continue
-            if i > j:
-                continue
-            new_graph = main.graph_matcher(graphs[i+1], graphs[j+1], bgm_edit_matrix[i,j], bgm_matchings[i,j])
-            current_bool = main.isomorph_check(graphs[j+1], new_graph)
-            if not current_bool:
-                print(bgm_edit_matrix[i,j])
-                print(bgm_matchings[i,j])
-                main.print_two_graphs(graphs[j+1], new_graph)
-                print(i+1, j+1)
-                print("\n")
-                print("\n")
-
-    # save cost matrix to file
-    # np.savetxt(f"{dataset_name}_cost_matrix.csv", cost_matrix, delimiter=",")
-
-    print(cost_matrix - bgm_cost_matrix)
-
-    print("Done")
+    print("Done!")
