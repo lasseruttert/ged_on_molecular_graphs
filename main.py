@@ -78,11 +78,14 @@ def build_nt(graph, root, height, k):
     * param k: the maximum height difference for redundancy elimination
 
     * return: a networkx DiGraph object representing the neighborhood tree
+
+    * runtime: O(|E(graph)| * (k+1)) 
     
     * description:
     * The function builds a neighborhood tree of a graph with a given root node, height and k
     TODO add more description
     """
+    height = min(height, nx.dag_longest_path_length(graph, root)+k)
     tree = nx.DiGraph()
     tree.add_node(root, label=graph.nodes[root]["label"], height=0)
     D = {} # D[v] is the depth of node v
@@ -134,6 +137,8 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         * param number: the number of children the root should have
 
         * return: the padded tree
+
+        * runtime: O(number)
 
         * description:
         * The function pads a tree with undefined nodes to a given number of children of the root
@@ -281,6 +286,8 @@ def calculate_costs(tree):
 
     * return: the neighborhood tree with the costs of inserting and deleting nodes stored in the nodes
 
+    * runtime: O(|V(tree)| + |E(tree)|)
+
     * description:
     * The function calculates the costs of inserting and deleting nodes in a neighborhood tree based on their subtree via a breadth-first search
     """
@@ -312,6 +319,8 @@ def create_subgraph(graph, node):
     * param node: the node in the graph to start the subgraph from
 
     * return: a networkx DiGraph object representing the subgraph
+
+    * runtime: O(|V(graph)| + |E(graph)|)
 
     * description:
     * The function creates a subgraph of a graph starting from a specific node by adding all nodes and edges that are reachable from the node
@@ -351,6 +360,8 @@ def create_subgraph_dict(graph):
     * param graph: a networkx DiGraph object representing the graph
 
     * return: a dictionary containing the subgraphs of the nodes of the graph
+
+    * runtime: O(|V(graph)| * (|V(graph)| + |E(graph)|))
 
     * description:
     * The function creates a dictionary of subgraphs for each node in a graph by calling the create_subgraph function for each node
@@ -393,6 +404,8 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
     * param col_ind: the column indices of the Hungarian Algorithm matching
 
     * return: the edit path between the two graphs
+
+    * runtime: O(|V(graph1)| + |E(graph1)| + |V(graph2)| + |E(graph2)|)
 
     * description:
     * The function derives the edit path between two graphs based on the Hungarian Algorithm matching
@@ -602,6 +615,8 @@ def graph_matcher(graph1, graph2, edit_path, matching):
     * param matching: the matching between the nodes of the two graphs
 
     * return: the first graph after applying the edit path
+
+    * runtime: O(edit_path * O(action))
 
     * description:
     * The function applies the edit path to the first graph based on the matching

@@ -75,13 +75,24 @@ for graph_id in node_to_graph["graph_id"].unique():
 
 print(f"Loading the Graphs: {t.time() - basetime}s")
 
+import seaborn as sns
+
+# Assuming cost_matrix is your matrix
+def plot_cost_matrix(cost_matrix, title="Cost Matrix"):
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cost_matrix, annot=True, fmt="d", cmap="coolwarm", cbar=True)
+    plt.xlabel('Graph 1 Nodes')
+    plt.ylabel('Graph 2 Nodes')
+    plt.title(title)
+    plt.show()
+
 
 if __name__ == "__main__":
     n = 20
 
     cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:n]}, 10, 0)
 
-    print(cost_matrix)
+    plot_cost_matrix(cost_matrix, title="Cost Matrix")
 
     # avg value of cost_matrix
     print(np.mean(cost_matrix))
