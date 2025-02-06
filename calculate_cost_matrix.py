@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:n]}, 10, 0)
 
-    plot_cost_matrix(cost_matrix, title="Cost Matrix")
+    # plot_cost_matrix(cost_matrix, title="Cost Matrix")
 
     # avg value of cost_matrix
     print(np.mean(cost_matrix))
@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
     bgm_cost_matrix, bgm_edit_matrix, bgm_matchings = main.standard_bgm_matrix({k: graphs[k] for k in list(graphs)[:n]})
 
-    print(bgm_cost_matrix)
+    # print(bgm_cost_matrix)
 
     # avg value of cost_matrix
     print(np.mean(bgm_cost_matrix))

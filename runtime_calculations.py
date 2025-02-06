@@ -85,33 +85,33 @@ if __name__ == "__main__":
 
     # print(f"Average time: {total_time / 10}s")
 
-    # heights = [1,2,3,4,5,6,7,8,9,10]
-    # runtimes_cnt = []
-    # runtimes_bgm = []
-    # for height in heights:
-    #     total_time = 0
-    #     for i in range(100):
-    #         x = r.randint(1, 188)
-    #         y = r.randint(1, 188)
-    #         basetime = t.time()
-    #         main.calculate_GED_bgm(graphs[x], graphs[y], height=height)
-    #         total_time += t.time() - basetime
-    #     runtimes_cnt.append(total_time / 100)
-    #     total_time = 0
-    #     for i in range(100):
-    #         x = r.randint(1, 188)
-    #         y = r.randint(1, 188)
-    #         basetime = t.time()
-    #         main.standard_bgm(graphs[x], graphs[y])
-    #         total_time += t.time() - basetime
-    #     runtimes_bgm.append(total_time / 100)
+    heights = [1,2,3,4,5,6,7,8,9,10]
+    runtimes_cnt = []
+    runtimes_bgm = []
+    for height in heights:
+        total_time = 0
+        for i in range(100):
+            x = r.randint(1, 188)
+            y = r.randint(1, 188)
+            basetime = t.time()
+            main.calculate_GED_bgm(graphs[x], graphs[y], height=height)
+            total_time += t.time() - basetime
+        runtimes_cnt.append(total_time / 100)
+        total_time = 0
+        for i in range(100):
+            x = r.randint(1, 188)
+            y = r.randint(1, 188)
+            basetime = t.time()
+            main.standard_bgm(graphs[x], graphs[y])
+            total_time += t.time() - basetime
+        runtimes_bgm.append(total_time / 100)
 
-    # # save a plot of the runtime, y axis is the runtime, x axis is height parameter
-    # plt.plot(heights, runtimes_cnt, label="cnt", color="orange")
-    # plt.plot(heights, runtimes_bgm, label="bgm", color="blue")
-    # plt.xlabel("Height")
-    # plt.ylabel("Runtime")
-    # plt.title(f"Runtime of GED calculation: {dataset_name}")
+    # save a plot of the runtime, y axis is the runtime, x axis is height parameter
+    plt.plot(heights, runtimes_cnt, label="cnt", color="orange")
+    plt.plot(heights, runtimes_bgm, label="bgm", color="blue")
+    plt.xlabel("Height")
+    plt.ylabel("Runtime")
+    plt.title(f"Runtime of GED calculation: {dataset_name}")
 
     # plt.savefig(f"runtime_ged_{dataset_name}.png") 
 

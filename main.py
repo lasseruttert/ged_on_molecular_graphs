@@ -85,7 +85,7 @@ def build_nt(graph, root, height, k):
     * The function builds a neighborhood tree of a graph with a given root node, height and k
     TODO add more description
     """
-    height = min(height, nx.dag_longest_path_length(graph, root)+k)
+    # height = min(height, nx.dag_longest_path_length(graph, root)+k)
     tree = nx.DiGraph()
     tree.add_node(root, label=graph.nodes[root]["label"], height=0)
     D = {} # D[v] is the depth of node v
@@ -233,7 +233,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
                         #// cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + cost_insert_edge(tree2_padded.edges[root2, child2_ident]["label"])) * (1/(1+depth+1))
                     else: # both children are not dummy nodes -> recursive call
                         # check if the edge labels are different and add the cost of relabeling the edge
-                        temp_cost = 1 if hash(tree1_padded.edges[root1, child1_ident]["label"]) != hash(tree2_padded.edges[root2, child2_ident]["label"]) else 0
+                        temp_cost = 1 * pow(base=0.5, exp=depth) if hash(tree1_padded.edges[root1, child1_ident]["label"]) != hash(tree2_padded.edges[root2, child2_ident]["label"]) else 0
                         #// temp_cost = cost_relabel_edge(tree1_padded.edges[root1, child1_ident]["label"], tree2_padded.edges[root2, child2_ident]["label"]) if tree1_padded.edges[root1, child1_ident]["label"] != tree2_padded.edges[root2, child2_ident]["label"] else 0
                         # check cache for recursive call
                         if (subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"]) in cache:
@@ -247,7 +247,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         # calculate the cost of the roots
         cost_root = 0 
         if tree1_padded.nodes[root1]["label"] != tree2_padded.nodes[root2]["label"]: # check if the root labels are different
-            cost_root = 1
+            cost_root = 1 * pow(base=0.5, exp=depth)
             #// cost_root = cost_relabel_node(tree1_padded.nodes[root1]["label"], tree2_padded.nodes[root2]["label"])
         
         # use the Hungarian Algorithm to find the optimal matching of the children
@@ -258,7 +258,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
             cost += cost_matrix[row_ind[i]][col_ind[i]]
         
         # calculate the final result of the SDTED
-        result = (cost + cost_root) * (10/(10+depth)) # multiply by the depth factor to give less weight to nodes further away from the root
+        result = (cost + cost_root) # multiply by the depth factor to give less weight to nodes further away from the root
         # add the result to the cache
         cache[key] = result
 
@@ -303,7 +303,7 @@ def calculate_costs(tree):
                 if neighbor not in visited and tree.nodes[neighbor]["height"] > tree.nodes[current_node]["height"]:
                     queue.append(neighbor)
                     visited.add(neighbor)
-                    cost += 2 * (10/(10+tree.nodes[neighbor]["height"]+1))
+                    cost += 2 * pow(base=0.5, exp=tree.nodes[neighbor]["height"])# 0.5 to the power of height:
                     #// cost += cost_insert_edge(tree.edges[current_node, neighbor]["label"]) + cost_insert_node(tree.nodes[neighbor]["label"])
         # add the cost to the node
         tree.nodes[node]["cost"] = cost
