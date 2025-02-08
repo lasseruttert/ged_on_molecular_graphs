@@ -85,7 +85,7 @@ def build_nt(graph, root, height, k):
     * The function builds a neighborhood tree of a graph with a given root node, height and k
     TODO add more description
     """
-    # height = min(height, nx.dag_longest_path_length(graph, root)+k)
+    height = min(height, nx.diameter(graph)+k) 
     tree = nx.DiGraph()
     tree.add_node(root, label=graph.nodes[root]["label"], height=0)
     D = {} # D[v] is the depth of node v
@@ -192,7 +192,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         root1 = next(iter(tree1.nodes)) # get the root of the first tree
         root2 = next(iter(tree2.nodes)) # get the root of the second tree
 
-        if tree1.degree[next(iter(tree1.nodes))] != tree2.degree[next(iter(tree2.nodes))]:
+        if len(children1) != len(children2):
             tree1_padded = pad(tree1, n)
             tree2_padded = pad(tree2, n)
 
@@ -226,10 +226,10 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
 
                 if child1_label != "pad" or child2_label != "pad": # check if at least one of the children is not a dummy node
                     if child1_label != "pad" and child2_label == "pad": # child1 exists, child2 is a dummy node -> insert child1
-                        cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + 1) #* (1/(1+depth+1))
+                        cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + 1) * pow(base=0.5, exp=depth)
                         #// cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + cost_insert_edge(tree1_padded.edges[root1, child1_ident]["label"])) * (1/(1+depth+1))
                     elif child2_label != "pad" and child1_label == "pad": # child2 exists, child1 is a dummy node -> insert child2
-                        cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + 1) #* (1/(1+depth+1))
+                        cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + 1) * pow(base=0.5, exp=depth)
                         #// cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + cost_insert_edge(tree2_padded.edges[root2, child2_ident]["label"])) * (1/(1+depth+1))
                     else: # both children are not dummy nodes -> recursive call
                         # check if the edge labels are different and add the cost of relabeling the edge
@@ -237,10 +237,10 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
                         #// temp_cost = cost_relabel_edge(tree1_padded.edges[root1, child1_ident]["label"], tree2_padded.edges[root2, child2_ident]["label"]) if tree1_padded.edges[root1, child1_ident]["label"] != tree2_padded.edges[root2, child2_ident]["label"] else 0
                         # check cache for recursive call
                         if (subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"]) in cache:
-                            recursive_cost = cache[(subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"])]
+                            recursive_cost = cache[(subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"])] * pow(base=0.5, exp=depth)
                         else:
                             # recursive call on the subgraphs induced by the children of the roots
-                            recursive_cost = recusive_sdted(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident], depth + 1)
+                            recursive_cost = recusive_sdted(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident], depth + 1) * pow(base=0.5, exp=depth)
                         # calculate the cost of the recursive call and add the cost of the edge relabeling 
                         cost_matrix[i][j] = (recursive_cost + temp_cost) 
 
@@ -265,7 +265,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         return result
 
     # start the recursive calculation of the SDTED between the two trees 
-    result = recusive_sdted(treee1, treee2, 1)
+    result = recusive_sdted(treee1, treee2, 0)
     # add the result to the cache
     cache[(treee1.graph["encoding"], treee2.graph["encoding"])] = result
 
@@ -292,7 +292,7 @@ def calculate_costs(tree):
     * The function calculates the costs of inserting and deleting nodes in a neighborhood tree based on their subtree via a breadth-first search
     """
     for node in sorted(tree.nodes):
-        cost = 0
+        cost = 1
         queue = deque([node])
         visited = set([node])
 
@@ -303,7 +303,7 @@ def calculate_costs(tree):
                 if neighbor not in visited and tree.nodes[neighbor]["height"] > tree.nodes[current_node]["height"]:
                     queue.append(neighbor)
                     visited.add(neighbor)
-                    cost += 2 * pow(base=0.5, exp=tree.nodes[neighbor]["height"])# 0.5 to the power of height:
+                    cost += 2 #* pow(base=0.5, exp=tree.nodes[neighbor]["height"])# 0.5 to the power of height:
                     #// cost += cost_insert_edge(tree.edges[current_node, neighbor]["label"]) + cost_insert_node(tree.nodes[neighbor]["label"])
         # add the cost to the node
         tree.nodes[node]["cost"] = cost

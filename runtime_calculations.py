@@ -85,33 +85,30 @@ if __name__ == "__main__":
 
     # print(f"Average time: {total_time / 10}s")
 
-    heights = [1,2,3,4,5,6,7,8,9,10]
-    runtimes_cnt = []
-    runtimes_bgm = []
-    for height in heights:
-        total_time = 0
-        for i in range(100):
-            x = r.randint(1, 188)
-            y = r.randint(1, 188)
-            basetime = t.time()
-            main.calculate_GED_bgm(graphs[x], graphs[y], height=height)
-            total_time += t.time() - basetime
-        runtimes_cnt.append(total_time / 100)
-        total_time = 0
-        for i in range(100):
-            x = r.randint(1, 188)
-            y = r.randint(1, 188)
-            basetime = t.time()
-            main.standard_bgm(graphs[x], graphs[y])
-            total_time += t.time() - basetime
-        runtimes_bgm.append(total_time / 100)
+    # heights = [1,2,3,4,5,6,7,8,9,10,11,12,13,14]
+    # runtimes_cnt = []
+    # runtimes_bgm = []
+    # for height in heights:
+    #     total_time_cnt = 0
+    #     total_time_bgm = 0
+    #     for i in range(30):
+    #         x = r.randint(1, 188)
+    #         y = r.randint(1, 188)
+    #         basetime = t.time()
+    #         main.calculate_GED_bgm(graphs[x], graphs[y], height=height)
+    #         total_time_cnt += t.time() - basetime
+    #         basetime = t.time()
+    #         main.standard_bgm(graphs[x], graphs[y])
+    #         total_time_bgm += t.time() - basetime
+    #     runtimes_cnt.append(total_time_cnt / 30)
+    #     runtimes_bgm.append(total_time_bgm / 30)
 
-    # save a plot of the runtime, y axis is the runtime, x axis is height parameter
-    plt.plot(heights, runtimes_cnt, label="cnt", color="orange")
-    plt.plot(heights, runtimes_bgm, label="bgm", color="blue")
-    plt.xlabel("Height")
-    plt.ylabel("Runtime")
-    plt.title(f"Runtime of GED calculation: {dataset_name}")
+    # # save a plot of the runtime, y axis is the runtime, x axis is height parameter
+    # plt.plot(heights, runtimes_cnt, label="cnt", color="orange")
+    # plt.plot(heights, runtimes_bgm, label="bgm", color="blue")
+    # plt.xlabel("Height")
+    # plt.ylabel("Runtime")
+    # plt.title(f"Runtime of GED calculation: {dataset_name}")
 
     # plt.savefig(f"runtime_ged_{dataset_name}.png") 
 
@@ -159,5 +156,36 @@ if __name__ == "__main__":
     # plt.title(f"Error of GED calculation: {dataset_name}")
 
     # plt.savefig(f"error_ged_{dataset_name}.png")
+
+    heights = [1,2,3,4,5,6,7,8,9,10]
+    errors_cnt = []
+    errors_bgm = []
+    x = 33
+    y = 64
+    actual = nx.graph_edit_distance(graphs[x],graphs[y],node_match=main.node_match,edge_match=main.edge_match, timeout=10)
+    for height in heights:
+        print(f"Height: {height}")
+        error_cnt = 0
+        error_bgm = 0
+        for i in range(100):
+            print(i)
+            # x = r.randint(1, 188)
+            # y = r.randint(1, 188)
+            # actual = nx.graph_edit_distance(graphs[x],graphs[y],node_match=main.node_match,edge_match=main.edge_match, timeout=0.5)
+            _,_,cnt,_,_ = main.calculate_GED_bgm(graphs[x], graphs[y], height=height)
+            error_cnt += (cnt - actual)/actual if actual != 0 else 0
+            _,_,bgm,_,_ = main.standard_bgm(graphs[x], graphs[y])
+            error_bgm += (bgm - actual)/actual if actual != 0 else 0
+        errors_cnt.append(error_cnt / 100)
+        errors_bgm.append(error_bgm / 100)
+
+    # save a plot of the runtime, y axis is the runtime, x axis is height parameter
+    plt.plot(heights, errors_cnt, label="cnt", color="orange")
+    plt.plot(heights, errors_bgm, label="bgm", color="blue")
+    plt.xlabel("Height")
+    plt.ylabel("Error")
+    plt.title(f"Error of GED (CNT vs BGM): {dataset_name}")
+
+    plt.savefig(f"error_ged_cnt_vs_bgm_{dataset_name}.png")
 
     print("Done")

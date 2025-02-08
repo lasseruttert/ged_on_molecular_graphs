@@ -97,21 +97,26 @@ def cluster_graphs(graphs, cost_matrix):
 
     for i, graph_id in enumerate(graphss.keys()):
         # find the smallest distance to each cluster
-        distances = []
-        for cluster in clusters.values():
-            cluster_cost = 0
+        distances = {label: [] for label in set(graph_labels)}
+        for label,cluster in clusters.items():
+            cluster_cost = float("inf")
             for cluster_graph_id in cluster:
-                cluster_cost += cost_matrix[graph_id - 1, cluster_graph_id - 1]
-            distances.append(cluster_cost/len(cluster))
+                if cost_matrix[graph_id - 1, cluster_graph_id - 1] < cluster_cost:
+                    cluster_cost = cost_matrix[graph_id - 1, cluster_graph_id - 1]
+            distances[label] = cluster_cost
         # add the graph to the cluster with the smallest distance
-        label = graphs[graph_id].graph["label"]  # Hole das Label des Graphen
-        clusters[label].append(graph_id)
+        min_index, min_distance = None, float("inf")
+        for index, distance in distances.items():
+            if distance < min_distance:
+                min_index = index
+                min_distance = distance
+        clusters[min_index].append(graph_id)
 
 
     return clusters
 
 if __name__ == "__main__":
-    n = 20
+    n = 50
 
     print("CNT")
     used_graphs = {key: graphs[key] for key in list(graphs.keys())[:n]}

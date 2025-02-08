@@ -13,7 +13,7 @@ basetime = t.time()
 
 # Pfad zu den Dateien
 current_dir = os.path.dirname(__file__)
-dataset_name = "PTC_FM"
+dataset_name = "MUTAG"
 path = os.path.join(current_dir, "data", dataset_name)
 
 # Lade Adjacency-Matrix
@@ -88,18 +88,26 @@ def plot_cost_matrix(cost_matrix, title="Cost Matrix"):
 
 
 if __name__ == "__main__":
-    n = 20
+    graph1 = graphs[1]
+    nt = main.build_nt(graph1, 1, 10,0)
+    nt1 = main.calculate_costs(nt)
+
+    main.print_two_graphs(nt,nt1)
+
+    node_costs = {node: f"{node}: {cost}" for node, cost in nx.get_node_attributes(nt1,"cost").items()}
+
+    nx.draw(graph1, with_labels=True, labels=node_costs)
+    plt.show()
+
+
+
+
+
+    n = 2
 
     cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:n]}, 10, 0)
 
     # plot_cost_matrix(cost_matrix, title="Cost Matrix")
-
-    # avg value of cost_matrix
-    print(np.mean(cost_matrix))
-
-    # highest difference in cost_matrix
-    # find min, not on diagonal
-    print(np.max(cost_matrix) - np.min(cost_matrix[np.nonzero(cost_matrix)]))
 
     for i in range(n): 
         for j in range(n):
@@ -122,11 +130,20 @@ if __name__ == "__main__":
     # print(bgm_cost_matrix)
 
     # avg value of cost_matrix
+    print(f"Mean")
+    print(np.mean(cost_matrix))
     print(np.mean(bgm_cost_matrix))
-
+    print("--------------------")
+    print(f"Average")
+    print(np.average(cost_matrix))
+    print(np.average(bgm_cost_matrix))
+    print("--------------------")
+    print(f"Max. Difference")
     # highest difference in cost_matrix
     # find min, not on diagonal
+    print(np.max(cost_matrix) - np.min(cost_matrix[np.nonzero(cost_matrix)]))
     print(np.max(bgm_cost_matrix) - np.min(bgm_cost_matrix[np.nonzero(bgm_cost_matrix)]))
+    print("--------------------")
 
     for i in range(n): 
         for j in range(n):
@@ -148,5 +165,6 @@ if __name__ == "__main__":
     # np.savetxt(f"{dataset_name}_cost_matrix.csv", cost_matrix, delimiter=",")
 
     print(cost_matrix - bgm_cost_matrix)
+    print(np.average(cost_matrix - bgm_cost_matrix))
 
     print("Done")
