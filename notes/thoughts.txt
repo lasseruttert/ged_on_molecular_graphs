@@ -1,0 +1,5 @@
+? General
+* CNT and BGM equally bad approaches for molecular graphs as substructures such as rings give no info for heuristic
+
+? CNT implementation
+* weight implementation changes GED approximation error

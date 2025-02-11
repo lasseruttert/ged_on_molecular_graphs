@@ -142,21 +142,30 @@ if __name__ == "__main__":
     # main.print_two_graphs(subgraph2,ring)
     # main.print_two_graphs(subgraph3,ring)
     
-    _,_,ged1,_,_ = main.calculate_GED_bgm(subgraph1, ring)
-    _,_,ged2,_,_ = main.calculate_GED_bgm(subgraph2, ring)
-    _,_,ged3,_,_ = main.calculate_GED_bgm(subgraph3, ring)
+    _,_,ged1,e1,m1 = main.calculate_GED_bgm(subgraph1, ring)
+    _,_,ged2,e2,m2 = main.calculate_GED_bgm(subgraph2, ring)
+    _,_,ged3,e3,m3 = main.calculate_GED_bgm(subgraph3, ring)
+
+    g1 = main.graph_matcher(subgraph1,ring,e1,m1)
+    g2 = main.graph_matcher(subgraph2,ring,e2,m2)
+    g3 = main.graph_matcher(subgraph3,ring,e3,m3)
+
+    print(main.isomorph_check(g1,ring))
+    print(main.isomorph_check(g2,ring))
+    print(main.isomorph_check(g3,ring))
 
     print(ged1)
     print(ged2)
     print(ged3)
 
-    _,_,ged_bgm1,_,_ = main.standard_bgm(subgraph1, ring)
-    _,_,ged_bgm2,_,_ = main.standard_bgm(subgraph2, ring)
-    _,_,ged_bgm3,_,_ = main.standard_bgm(subgraph3, ring)
+    # _,_,ged_bgm1,_,_ = main.standard_bgm(subgraph1, ring)
+    # _,_,ged_bgm2,_,_ = main.standard_bgm(subgraph2, ring)
+    # _,_,ged_bgm3,_,_ = main.standard_bgm(subgraph3, ring)
 
-    print(ged_bgm1)
-    print(ged_bgm2)
-    print(ged_bgm3)
+    # print(ged_bgm1)
+    # print(ged_bgm2)
+    # print(ged_bgm3)
 
+# ! GED cannot be used as a similarity measure for subgraph matching
 
     print("Done!")
