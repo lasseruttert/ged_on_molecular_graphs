@@ -7,33 +7,43 @@ from itertools import combinations
 from functools import lru_cache
 import matplotlib.pyplot as plt
 import concurrent.futures
+cimport numpy as np
+cimport cython
+from libc.math cimport pow
 
 # ? These functions are not of any use in our implementation, but it is possible to use them to calculate the costs of the different operations in the GED calculation
 # ? For example, the cost of relabeling a edge could be different based on the label of the edge and its nodes, this is especially interesting in molecular graphs, as you can consider the energy of the bond between the atoms as the cost of relabeling the edge
 # ? The places, where these functions should be used are marked with a comment in the code, but not checked for correctness
 
-def cost_insert_node(node_label):
+@cython.cdivision(True)
+cpdef int cost_insert_node(node_label):
     return 1
 
-def cost_delete_node(node_label):
+@cython.cdivision(True)
+cpdef int cost_delete_node(node_label):
     return 1
 
-def cost_insert_edge(edge_label):
+@cython.cdivision(True)
+cpdef int cost_insert_edge(edge_label):
     return 1
 
-def cost_delete_edge(edge_label):
+@cython.cdivision(True)
+cpdef int cost_delete_edge(edge_label):
     return 1
 
-def cost_relabel_node(node_label1, node_label2):
+@cython.cdivision(True)
+cpdef int cost_relabel_node(node_label1, node_label2):
     return 1
 
-def cost_relabel_edge(edge_label1, edge_label2):
+@cython.cdivision(True)
+cpdef int cost_relabel_edge(edge_label1, edge_label2):
     return 1
 
 # ? The following function is our implementation of canonical encoding of a tree, which is used to encode the neighborhood trees in the SDTED calculation
 # ? As seen below, a different version of the encoding sacrifices some structural information, but is much faster to compute
 
-def encode_graph(graph):
+@cython.cdivision(True)
+cdef encode_graph(graph):
     """
     * encodes a graph via canonical encoding and hashing
 
@@ -68,7 +78,8 @@ def encode_graph(graph):
 
 # ? The following functions build_nt and sdted were implemented based on the given pseudocode in the paper "Approximating the Graph Edit Distance with Compact Neighborhood Representations"
 
-def build_nt(graph, root, height, k):
+@cython.cdivision(True)
+cpdef build_nt(graph, root, height, k):
     """
     * builds a neighborhood tree of a graph with a given root node, height and k
 
@@ -114,7 +125,9 @@ def build_nt(graph, root, height, k):
 
     return tree
 
-def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
+
+@cython.cdivision(True)
+cdef sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
     """
     * calculates the structure and depth preserving tree edit distance (SDTED) between two trees
 
@@ -160,6 +173,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
 
         return tree
 
+    @lru_cache(maxsize=None)
     def recusive_sdted(tree1, tree2, depth):
         """
         * calculates the SDTED between two trees recursively
@@ -176,7 +190,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         # check if the calculation is already in the cache, if so return the result
         key = (tree1.graph["encoding"], tree2.graph["encoding"])
         if key in cache:
-            return cache[key] * pow(base=0.5, exp=depth)
+            return cache[key]
 
         # n is the maximum number of children of the roots of the two trees
         children1 = sorted(tree1.neighbors(next(iter(tree1.nodes))))
@@ -197,15 +211,11 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         # create the cost matrix as n x n matrix
         cost_matrix = np.zeros((n, n))
 
-        # root1 = next(iter(tree1_padded.nodes)) # get the root of the first tree
-        # root2 = next(iter(tree2_padded.nodes)) # get the root of the second tree
-
-        #// children1 = sorted(tree1_padded.neighbors(next(iter(tree1_padded.nodes))))
-        #// children2 = sorted(tree2_padded.neighbors(next(iter(tree2_padded.nodes))))
-
         # get the children of the roots (ensure that we use a list, which does not change the order of the children)
-        children1 = sorted(tree1_padded.neighbors(root1))  
-        children2 = sorted(tree2_padded.neighbors(root2))  
+        nodes_list = list(tree1_padded.nodes)  
+        children1 = sorted(tree1_padded.neighbors(nodes_list[0]))  
+        nodes_list = list(tree2_padded.nodes)  
+        children2 = sorted(tree2_padded.neighbors(nodes_list[0]))  
 
         # calculate the cost of the children of the roots 
         for i in range(n):
@@ -222,31 +232,25 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
 
                 if child1_label != "pad" or child2_label != "pad": # check if at least one of the children is not a dummy node
                     if child1_label != "pad" and child2_label == "pad": # child1 exists, child2 is a dummy node -> insert child1
-                        cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + 1) #* pow(base=0.5, exp=depth)
-                        #// cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + cost_insert_edge(tree1_padded.edges[root1, child1_ident]["label"])) * (1/(1+depth+1))
+                        cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + 1) * pow(0.5, depth)
                     elif child2_label != "pad" and child1_label == "pad": # child2 exists, child1 is a dummy node -> insert child2
-                        cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + 1) #* pow(base=0.5, exp=depth)
-                        #// cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + cost_insert_edge(tree2_padded.edges[root2, child2_ident]["label"])) * (1/(1+depth+1))
+                        cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + 1) * pow(0.5, depth)
                     else: # both children are not dummy nodes -> recursive call
                         # check if the edge labels are different and add the cost of relabeling the edge
-                        temp_cost = 0
-                        if hash(tree1_padded.edges[root1, child1_ident]["label"]) != hash(tree2_padded.edges[root2, child2_ident]["label"]):
-                            temp_cost = 1 #* pow(base=0.5, exp=depth)
-                        #// temp_cost = cost_relabel_edge(tree1_padded.edges[root1, child1_ident]["label"], tree2_padded.edges[root2, child2_ident]["label"]) if tree1_padded.edges[root1, child1_ident]["label"] != tree2_padded.edges[root2, child2_ident]["label"] else 0
+                        temp_cost = 1 * pow(0.5, depth) if hash(tree1_padded.edges[root1, child1_ident]["label"]) != hash(tree2_padded.edges[root2, child2_ident]["label"]) else 0
                         # check cache for recursive call
                         if (subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"]) in cache:
-                            recursive_cost = cache[(subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"])] * pow(base=0.5, exp=depth)
+                            recursive_cost = cache[(subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"])] * pow(0.5, depth)
                         else:
                             # recursive call on the subgraphs induced by the children of the roots
-                            recursive_cost = recusive_sdted(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident], depth + 1) #* pow(base=0.5, exp=depth)
+                            recursive_cost = recusive_sdted(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident], depth + 1) * pow(0.5, depth)
                         # calculate the cost of the recursive call and add the cost of the edge relabeling 
                         cost_matrix[i][j] = (recursive_cost + temp_cost) 
 
         # calculate the cost of the roots
         cost_root = 0 
         if tree1_padded.nodes[root1]["label"] != tree2_padded.nodes[root2]["label"]: # check if the root labels are different
-            cost_root = 1 #* pow(base=0.5, exp=depth)
-            #// cost_root = cost_relabel_node(tree1_padded.nodes[root1]["label"], tree2_padded.nodes[root2]["label"])
+            cost_root = 1 * pow(0.5, depth)
         
         # use the Hungarian Algorithm to find the optimal matching of the children
         row_ind, col_ind = linear_sum_assignment(cost_matrix)
@@ -259,8 +263,6 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         result = (cost + cost_root) # multiply by the depth factor to give less weight to nodes further away from the root
         # add the result to the cache
         cache[key] = result
-
-        result = result * pow(base=0.5, exp=depth)
 
         return result
 
@@ -278,7 +280,8 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
 # ? 4. create a dictionary of neighborhood trees for each node in the graph
 # ? while this takes a lot of time upfront, it makes the calculations of the SDTED much faster
 
-def calculate_costs(tree):
+@cython.cdivision(True)
+cpdef calculate_costs(tree):
     """
     * calculates the costs of inserting and deleting nodes in a neighborhood tree and stores them in the nodes
 
@@ -311,7 +314,8 @@ def calculate_costs(tree):
     return tree
 
 
-def create_subgraph(graph, node):
+@cython.cdivision(True)
+cpdef create_subgraph(graph, node):
     """
     * creates a subgraph of a graph starting from a specific node
 
@@ -353,7 +357,8 @@ def create_subgraph(graph, node):
     return subgraph
 
 
-def create_subgraph_dict(graph):
+@cython.cdivision(True)
+cpdef create_subgraph_dict(graph):
     """
     * creates a dictionary of subgraphs for each node in a graph
 
@@ -372,7 +377,8 @@ def create_subgraph_dict(graph):
     return subgraph_dict
 
 
-def create_nt_dict(graphs, height, k):
+@cython.cdivision(True)
+cpdef create_nt_dict(graphs, height, k):
     """
     * creates a dictionary of neighborhood trees with their subgraph dictionary for each node in a graph
 
@@ -394,7 +400,8 @@ def create_nt_dict(graphs, height, k):
 
 # ? The following functions are used to calculate the cost matrix, edit paths and matchings between the graphs
 
-def derive_edit_path(graph1, graph2, row_ind, col_ind):
+@cython.cdivision(True)
+cpdef derive_edit_path(graph1, graph2, row_ind, col_ind):
     """
     * derives the edit path between two graphs based on the Hungarian Algorithm matching
 

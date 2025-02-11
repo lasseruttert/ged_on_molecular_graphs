@@ -8,6 +8,7 @@ import numpy as np
 from scipy.optimize import linear_sum_assignment
 import main as main
 import os
+from itertools import combinations
 
 basetime = t.time()
 
@@ -75,81 +76,87 @@ for graph_id in node_to_graph["graph_id"].unique():
 
 print(f"Loading the Graphs: {t.time() - basetime}s")
 
-import seaborn as sns
+def create_subgraph(graph, nodes):
+    subgraph = nx.Graph()
+    subgraph.graph["id"] = graph.graph["id"]
+    for node in nodes:
+        subgraph.add_node(node, label=graph.nodes[node]["label"])
+    for source, target in graph.edges:
+        if source in nodes and target in nodes:
+            subgraph.add_edge(source, target, label=graph.edges[source, target]["label"])
+    return subgraph
 
-# Assuming cost_matrix is your matrix
-def plot_cost_matrix(cost_matrix, title="Cost Matrix"):
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(cost_matrix, annot=True, fmt="d", cmap="coolwarm", cbar=True)
-    plt.xlabel('Graph 1 Nodes')
-    plt.ylabel('Graph 2 Nodes')
-    plt.title(title)
-    plt.show()
+def create_all_subgraphs(graph):
+    all_subgraphs = []
+    for i in range(1, len(graph.nodes) + 1):
+        for subgraph_nodes in combinations(graph.nodes, i):
+            all_subgraphs.append(create_subgraph(graph, subgraph_nodes))
+    return all_subgraphs
 
+def create_benzol_ring():
+    ring = nx.Graph()
+    ring.graph["id"] = "benzol"
+    ring.add_node(1, label="0")
+    ring.add_node(2, label="0")
+    ring.add_node(3, label="0")
+    ring.add_node(4, label="0")
+    ring.add_node(5, label="0")
+    ring.add_node(6, label="0")
+
+    ring.add_edge(1, 2, label="0")
+    ring.add_edge(2, 3, label="0")
+    ring.add_edge(3, 4, label="0")
+    ring.add_edge(4, 5, label="0")
+    ring.add_edge(5, 6, label="0")
+    ring.add_edge(6, 1, label="0")
+    return ring
 
 if __name__ == "__main__":
-    n = 20
+    # matched_substructures = {}
+    # subgraphs = create_all_subgraphs(graphs[1])
 
-    cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:n]}, 10, 0)
+    ring = create_benzol_ring()
 
-    # plot_cost_matrix(cost_matrix, title="Cost Matrix")
+    # i = 0
 
-    for i in range(n): 
-        for j in range(n):
-            if i == j:
-                continue
-            if i > j:
-                continue
-            new_graph = main.graph_matcher(graphs[i+1], graphs[j+1], edit_matrix[i,j], matchings[i,j])
-            current_bool = main.isomorph_check(graphs[j+1], new_graph)
-            if not current_bool:
-                print(edit_matrix[i,j])
-                print(matchings[i,j])
-                main.print_two_graphs(graphs[j+1], new_graph)
-                print(i+1, j+1)
-                print("\n")
-                print("\n")
+    # for subgraph in subgraphs:
+    #     # check if subgraph is connected
+    #     if nx.is_connected(subgraph):
+    #         _,_,GED,_,_ = main.calculate_GED_bgm(subgraph, ring)
+    #         matched_substructures[i] = (GED,subgraph)
+    #         i += 1
 
-    bgm_cost_matrix, bgm_edit_matrix, bgm_matchings = main.standard_bgm_matrix({k: graphs[k] for k in list(graphs)[:n]})
+    # sorted_matches = dict(sorted(matched_substructures.items(), key=lambda item: item[1][0]))
+    # min_key, (min_ged, min_subgraph) = min(matched_substructures.items(), key=lambda item: item[1][0])
 
-    # print(bgm_cost_matrix)
+    # main.print_two_graphs(min_subgraph, ring)
+    nodes1 = [1,2,3,4,5,6]
+    nodes2 = [4,5,7,8,9,10]
+    nodes3 = [9,10,11,12,13,14]
 
-    # avg value of cost_matrix
-    print(f"Mean")
-    print(np.mean(cost_matrix))
-    print(np.mean(bgm_cost_matrix))
-    print("--------------------")
-    print(f"Average")
-    print(np.average(cost_matrix))
-    print(np.average(bgm_cost_matrix))
-    print("--------------------")
-    print(f"Max. Difference")
-    # highest difference in cost_matrix
-    # find min, not on diagonal
-    print(np.max(cost_matrix) - np.min(cost_matrix[np.nonzero(cost_matrix)]))
-    print(np.max(bgm_cost_matrix) - np.min(bgm_cost_matrix[np.nonzero(bgm_cost_matrix)]))
-    print("--------------------")
+    subgraph1 = create_subgraph(graphs[1],nodes1)
+    subgraph2 = create_subgraph(graphs[1],nodes2)
+    subgraph3 = create_subgraph(graphs[1],nodes3)
 
-    for i in range(n): 
-        for j in range(n):
-            if i == j:
-                continue
-            if i > j:
-                continue
-            new_graph = main.graph_matcher(graphs[i+1], graphs[j+1], bgm_edit_matrix[i,j], bgm_matchings[i,j])
-            current_bool = main.isomorph_check(graphs[j+1], new_graph)
-            if not current_bool:
-                print(bgm_edit_matrix[i,j])
-                print(bgm_matchings[i,j])
-                main.print_two_graphs(graphs[j+1], new_graph)
-                print(i+1, j+1)
-                print("\n")
-                print("\n")
+    # main.print_two_graphs(subgraph1,ring)
+    # main.print_two_graphs(subgraph2,ring)
+    # main.print_two_graphs(subgraph3,ring)
+    
+    _,_,ged1,_,_ = main.calculate_GED_bgm(subgraph1, ring)
+    _,_,ged2,_,_ = main.calculate_GED_bgm(subgraph2, ring)
+    _,_,ged3,_,_ = main.calculate_GED_bgm(subgraph3, ring)
 
-    # save cost matrix to file
-    # np.savetxt(f"{dataset_name}_cost_matrix.csv", cost_matrix, delimiter=",")
+    print(ged1)
+    print(ged2)
+    print(ged3)
 
-    print(cost_matrix - bgm_cost_matrix)
-    print(np.average(cost_matrix - bgm_cost_matrix))
+    _,_,ged_bgm1,_,_ = main.standard_bgm(subgraph1, ring)
+    _,_,ged_bgm2,_,_ = main.standard_bgm(subgraph2, ring)
+    _,_,ged_bgm3,_,_ = main.standard_bgm(subgraph3, ring)
 
-    print("Done")
+    print(ged_bgm1)
+    print(ged_bgm2)
+    print(ged_bgm3)
+
+
+    print("Done!")

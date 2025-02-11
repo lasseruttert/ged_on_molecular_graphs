@@ -160,8 +160,8 @@ if __name__ == "__main__":
     heights = [1,2,3,4,5,6,7,8,9,10]
     errors_cnt = []
     errors_bgm = []
-    x = 33
-    y = 64
+    x = 1
+    y = 13
     actual = nx.graph_edit_distance(graphs[x],graphs[y],node_match=main.node_match,edge_match=main.edge_match, timeout=10)
     for height in heights:
         print(f"Height: {height}")
