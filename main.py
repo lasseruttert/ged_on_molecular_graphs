@@ -1,12 +1,14 @@
-import networkx as nx
+import os
 import time as t
-from collections import deque
+import pandas as pd
 import numpy as np
-from scipy.optimize import linear_sum_assignment
-from itertools import combinations
-from functools import lru_cache
 import matplotlib.pyplot as plt
+import networkx as nx
+from itertools import combinations
+from collections import deque
+from scipy.optimize import linear_sum_assignment
 import concurrent.futures
+from functools import lru_cache
 
 # ? These functions are not of any use in our implementation, but it is possible to use them to calculate the costs of the different operations in the GED calculation
 # ? For example, the cost of relabeling a edge could be different based on the label of the edge and its nodes, this is especially interesting in molecular graphs, as you can consider the energy of the bond between the atoms as the cost of relabeling the edge
@@ -779,6 +781,78 @@ def print_two_graphs(graph1, graph2, layout='spring'):
     plt.show()
     
     return None
+
+
+def load_graphs(dataset, n = None):
+    # Pfad zu den Dateien
+    current_dir = os.path.dirname(__file__)
+    dataset_name = str(dataset)
+    path = os.path.join(current_dir, "data", dataset_name)
+
+    # Lade Adjacency-Matrix
+    edges = pd.read_csv(f"{path}\{dataset_name}_A.txt", header=None, sep=",")
+    edges.columns = ["source", "target"]
+
+
+    # Lade Knoten-zu-Graph-Zuordnung
+    node_to_graph = pd.read_csv(f"{path}\{dataset_name}_graph_indicator.txt", header=None)
+    node_to_graph.columns = ["graph_id"]
+
+
+    # Lade Graph-Labels
+    graph_labels = pd.read_csv(f"{path}\{dataset_name}_graph_labels.txt", header=None)
+    graph_labels.columns = ["label"]
+
+
+    # Lade Knoten-Labels
+    if os.path.exists(f"{path}\{dataset_name}_node_labels.txt"):
+        node_labels = pd.read_csv(f"{path}\{dataset_name}_node_labels.txt", header=None)
+        node_labels.columns = ["label"]
+
+    # Lade Kanten-Labels
+    if os.path.exists(f"{path}\{dataset_name}_edge_labels.txt"):
+        edge_labels = pd.read_csv(f"{path}\{dataset_name}_edge_labels.txt", header=None)
+        edge_labels.columns = ["label"]
+
+    # Erstelle die Graphen
+    graphs = {}
+    if n == None:
+        i = node_to_graph["graph_id"].nunique()
+    else:
+        i = 0
+    for graph_id in node_to_graph["graph_id"].unique():
+        if i == n:
+            break
+        graph_nodes = node_to_graph[node_to_graph["graph_id"] == graph_id].index + 1
+        subgraph_edges = edges[edges["source"].isin(graph_nodes) & edges["target"].isin(graph_nodes)]
+        graphs[graph_id] = nx.from_pandas_edgelist(subgraph_edges, source="source", target="target")
+        graphs[graph_id].add_nodes_from(graph_nodes)
+        graphs[graph_id].graph["label"] = graph_labels.loc[graph_id - 1, "label"]
+        # gib jeden Graphen eine ID
+        graphs[graph_id].graph["id"] = graph_id
+
+        # Füge Knoten-Labels hinzu
+        if "node_labels" in locals():
+            for node in graph_nodes:
+                graphs[graph_id].nodes[node]["label"] = node_labels.loc[node - 1, "label"]
+        else: 
+            for node in graph_nodes:
+                graphs[graph_id].nodes[node]["label"] = "dummy"
+
+        # Füge Kanten-Labels hinzu
+        if "edge_labels" in locals():
+            for _, row in subgraph_edges.iterrows():
+                source, target = row["source"], row["target"]
+                edge_label = edge_labels.loc[edges[(edges["source"] == source) & (edges["target"] == target)].index[0], "label"]
+                graphs[graph_id].edges[source, target]["label"] = edge_label
+                graphs[graph_id].edges[target, source]["label"] = edge_label  # Ungerichtete Kante (symmetrisch)
+        else:
+            for _, row in subgraph_edges.iterrows():
+                source, target = row["source"], row["target"]
+                graphs[graph_id].edges[source, target]["label"] = "dummy"
+                graphs[graph_id].edges[target, source]["label"] = "dummy"
+        i += 1
+    return graphs
 
 
 def standard_bgm(graph1, graph2):
