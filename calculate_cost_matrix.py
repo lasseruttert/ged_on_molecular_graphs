@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     graphs = main.load_graphs("MUTAG", n)
 
-    cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix({k: graphs[k] for k in list(graphs)[:n]}, 10, 0)
+    cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix(graphs, 4, 0)
 
     # plot_cost_matrix(cost_matrix, title="Cost Matrix")
 

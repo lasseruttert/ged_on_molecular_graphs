@@ -88,35 +88,65 @@ if __name__ == "__main__":
 
     # plt.savefig(f"error_ged_{dataset_name}.png")
 
+    # heights = [1,2,3,4,5,6,7,8,9,10]
+    # errors_cnt = []
+    # errors_bgm = []
+    # x = 1
+    # y = 13
+    # actual = nx.graph_edit_distance(graphs[x],graphs[y],node_match=main.node_match,edge_match=main.edge_match, timeout=10)
+    # for height in heights:
+    #     print(f"Height: {height}")
+    #     error_cnt = 0
+    #     error_bgm = 0
+    #     for i in range(100):
+    #         print(i)
+    #         # x = r.randint(1, 188)
+    #         # y = r.randint(1, 188)
+    #         # actual = nx.graph_edit_distance(graphs[x],graphs[y],node_match=main.node_match,edge_match=main.edge_match, timeout=0.5)
+    #         _,_,cnt,_,_ = main.calculate_GED_bgm(graphs[x], graphs[y], height=height)
+    #         error_cnt += (cnt - actual)/actual if actual != 0 else 0
+    #         _,_,bgm,_,_ = main.standard_bgm(graphs[x], graphs[y])
+    #         error_bgm += (bgm - actual)/actual if actual != 0 else 0
+    #     errors_cnt.append(error_cnt / 100)
+    #     errors_bgm.append(error_bgm / 100)
+
+    # # save a plot of the runtime, y axis is the runtime, x axis is height parameter
+    # plt.plot(heights, errors_cnt, label="cnt", color="orange")
+    # plt.plot(heights, errors_bgm, label="bgm", color="blue")
+    # plt.xlabel("Height")
+    # plt.ylabel("Error")
+    # plt.title(f"Error of GED (CNT vs BGM): {dataset_name}")
+
+    # plt.savefig(f"error_ged_cnt_vs_bgm_{dataset_name}.png")
+
+
     heights = [1,2,3,4,5,6,7,8,9,10]
-    errors_cnt = []
-    errors_bgm = []
-    x = 1
-    y = 13
-    actual = nx.graph_edit_distance(graphs[x],graphs[y],node_match=main.node_match,edge_match=main.edge_match, timeout=10)
+    GEDs_cnt = []
+    GEDs_bgm = []
+    GEDs_diff = []
     for height in heights:
         print(f"Height: {height}")
-        error_cnt = 0
-        error_bgm = 0
+        GED_cnt = 0
+        GED_bgm = 0
         for i in range(100):
-            print(i)
-            # x = r.randint(1, 188)
-            # y = r.randint(1, 188)
-            # actual = nx.graph_edit_distance(graphs[x],graphs[y],node_match=main.node_match,edge_match=main.edge_match, timeout=0.5)
-            _,_,cnt,_,_ = main.calculate_GED_bgm(graphs[x], graphs[y], height=height)
-            error_cnt += (cnt - actual)/actual if actual != 0 else 0
-            _,_,bgm,_,_ = main.standard_bgm(graphs[x], graphs[y])
-            error_bgm += (bgm - actual)/actual if actual != 0 else 0
-        errors_cnt.append(error_cnt / 100)
-        errors_bgm.append(error_bgm / 100)
+            for j in range(100):
+                print(height,i,j)
+                _,_,cnt,_,_ = main.calculate_GED_bgm(graphs[i+1], graphs[j+1], height=height)
+                _,_,bgm,_,_ = main.standard_bgm(graphs[i+1], graphs[j+1])
+                GED_cnt += cnt
+                GED_bgm += bgm
+        GEDs_cnt.append(GED_cnt / 10000)
+        GEDs_bgm.append(GED_bgm / 10000)
+        GEDs_diff.append(abs(GED_cnt - GED_bgm)/10000)
 
     # save a plot of the runtime, y axis is the runtime, x axis is height parameter
-    plt.plot(heights, errors_cnt, label="cnt", color="orange")
-    plt.plot(heights, errors_bgm, label="bgm", color="blue")
+    plt.plot(heights, GEDs_cnt, label="cnt", color="orange")
+    plt.plot(heights, GEDs_bgm, label="bgm", color="blue")
+    plt.plot(heights, GEDs_diff, label="diff", color="green")
     plt.xlabel("Height")
-    plt.ylabel("Error")
-    plt.title(f"Error of GED (CNT vs BGM): {dataset_name}")
+    plt.ylabel("GED")
+    plt.title(f"GED of CNT vs BGM (with diff): {dataset_name}")
 
-    plt.savefig(f"error_ged_cnt_vs_bgm_{dataset_name}.png")
+    plt.savefig(f"ged_cnt_vs_bgm_diff_{dataset_name}.png")
 
     print("Done")
