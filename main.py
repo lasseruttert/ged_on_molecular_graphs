@@ -189,12 +189,12 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         tree1_padded = tree1
         tree2_padded = tree2
 
-        root1 = next(iter(tree1.nodes)) # get the root of the first tree
-        root2 = next(iter(tree2.nodes)) # get the root of the second tree
-
         if len(children1) != len(children2):
             tree1_padded = pad(tree1, n)
             tree2_padded = pad(tree2, n)
+
+        root1 = list(tree1_padded.nodes())[0] # get the root of the first tree
+        root2 = list(tree2_padded.nodes())[0] # get the root of the second tree
 
         # create the cost matrix as n x n matrix
         cost_matrix = np.zeros((n, n))
@@ -605,6 +605,78 @@ def calculate_cost_matrix(graphs, height=8, k=0):
     return cost_matrix, edit_paths, matchings
 
 
+# ? The following functions are used to calculate the GED based on a standard BGM approach
+
+def standard_bgm(graph1, graph2):
+    """
+    * calculates the Graph Edit Distance (GED) between two graphs using the Hungarian Algorithm based on the standard cost function
+
+    * param graph1: a networkx Graph object representing the first graph
+    * param graph2: a networkx Graph object representing the second graph
+
+    * return: the row indices, column indices, the minimum GED, the edit path and the matching between the two graphs
+
+    * description:
+    TODO
+    """
+    nodes1 = sorted(graph1.nodes)
+    nodes2 = sorted(graph2.nodes)
+
+    n1, n2 = len(nodes1), len(nodes2)
+    cost_matrix = np.full((n1, n2), np.inf)  # Initialisiere hohe Kosten
+    
+    for i, u in enumerate(nodes1):
+        for j, v in enumerate(nodes2):
+            label_cost = 1 if graph1.nodes[u]["label"] != graph2.nodes[v]["label"] else 0
+            neighbor_cost = abs(len(list(graph1.neighbors(u))) - len(list(graph2.neighbors(v))))
+            cost_matrix[i, j] = label_cost + neighbor_cost
+
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+    matching = [(nodes1[i], nodes2[j]) for i, j in zip(row_ind, col_ind)]
+    edit_path = derive_edit_path(graph1, graph2, row_ind, col_ind)
+
+    min_ged = len(edit_path)
+
+    return row_ind, col_ind, min_ged, edit_path, matching
+
+def standard_bgm_matrix(graphs):
+    """
+    * calculates the GED cost matrix between a set of graphs using the Hungarian Algorithm based on the standard cost function
+
+    * param graphs: a dictionary containing networkx Graph objects representing the graphs
+    
+    * return: the GED cost matrix between the graphs, the edit paths and the matchings between the graphs
+
+    * description:
+    TODO
+    """
+    basetime = t.time()
+
+    # create the cost matrix, edit paths and matchings
+    graph_ids = list(graphs.keys())
+    cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0)
+    edit_paths = {}
+    matchings = {}
+
+    # use concurrent.futures to parallelize the calculation of the GED cost matrix
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {}
+        # calculate the GED between all pairs of graphs
+        for i, j in combinations(range(len(graph_ids)), 2):
+            futures[(i, j)] = executor.submit(standard_bgm, graphs[graph_ids[i]], graphs[graph_ids[j]])
+
+        # get the results of the futures and store them in the cost matrix, edit paths and matchings
+        for (i, j), future in futures.items():
+            row_ind, col_ind, min_GED, edit_path, matching = future.result()
+            cost_matrix[i, j] = cost_matrix[j, i] = min_GED
+            edit_paths[(i, j)] = edit_paths[(j, i)] = edit_path
+            matchings[(i, j)] = matchings[(j, i)] = matching
+
+    print(f"Calculating the cost matrix: {t.time() - basetime}s")
+    print("\n")
+    return cost_matrix, edit_paths, matchings
+
+
 # ? The following functions are used to check if the edit path is valid and to apply the edit path to the graph, to check if the graphs are isomorphic and to print the two graphs
 
 def graph_matcher(graph1, graph2, edit_path, matching):
@@ -784,37 +856,45 @@ def print_two_graphs(graph1, graph2, layout='spring'):
 
 
 def load_graphs(dataset, n = None):
-    # Pfad zu den Dateien
+    """
+    * loads the graphs from a dataset
+
+    * param dataset: the name of the dataset
+    * param n: the number of graphs to load from the dataset
+
+    * return: a dictionary containing the graphs
+    """
+    # get the path to the dataset
     current_dir = os.path.dirname(__file__)
     dataset_name = str(dataset)
     path = os.path.join(current_dir, "data", dataset_name)
 
-    # Lade Adjacency-Matrix
+    # get the edges of the graph from the adjacency matrix
     edges = pd.read_csv(f"{path}\{dataset_name}_A.txt", header=None, sep=",")
     edges.columns = ["source", "target"]
 
 
-    # Lade Knoten-zu-Graph-Zuordnung
+    # get the node to graph mapping
     node_to_graph = pd.read_csv(f"{path}\{dataset_name}_graph_indicator.txt", header=None)
     node_to_graph.columns = ["graph_id"]
 
 
-    # Lade Graph-Labels
+    # get the graph labels
     graph_labels = pd.read_csv(f"{path}\{dataset_name}_graph_labels.txt", header=None)
     graph_labels.columns = ["label"]
 
 
-    # Lade Knoten-Labels
+    # get the node labels
     if os.path.exists(f"{path}\{dataset_name}_node_labels.txt"):
         node_labels = pd.read_csv(f"{path}\{dataset_name}_node_labels.txt", header=None)
         node_labels.columns = ["label"]
 
-    # Lade Kanten-Labels
+    # get the edge labels
     if os.path.exists(f"{path}\{dataset_name}_edge_labels.txt"):
         edge_labels = pd.read_csv(f"{path}\{dataset_name}_edge_labels.txt", header=None)
         edge_labels.columns = ["label"]
 
-    # Erstelle die Graphen
+    # create a dictionary of graphs
     graphs = {}
     if n == None:
         i = node_to_graph["graph_id"].nunique()
@@ -828,10 +908,9 @@ def load_graphs(dataset, n = None):
         graphs[graph_id] = nx.from_pandas_edgelist(subgraph_edges, source="source", target="target")
         graphs[graph_id].add_nodes_from(graph_nodes)
         graphs[graph_id].graph["label"] = graph_labels.loc[graph_id - 1, "label"]
-        # gib jeden Graphen eine ID
         graphs[graph_id].graph["id"] = graph_id
 
-        # Füge Knoten-Labels hinzu
+        # add node labels to the graph if they exist
         if "node_labels" in locals():
             for node in graph_nodes:
                 graphs[graph_id].nodes[node]["label"] = node_labels.loc[node - 1, "label"]
@@ -839,7 +918,7 @@ def load_graphs(dataset, n = None):
             for node in graph_nodes:
                 graphs[graph_id].nodes[node]["label"] = "dummy"
 
-        # Füge Kanten-Labels hinzu
+        # add edge labels to the graph if they exist
         if "edge_labels" in locals():
             for _, row in subgraph_edges.iterrows():
                 source, target = row["source"], row["target"]
@@ -853,76 +932,6 @@ def load_graphs(dataset, n = None):
                 graphs[graph_id].edges[target, source]["label"] = "dummy"
         i += 1
     return graphs
-
-
-def standard_bgm(graph1, graph2):
-    """
-    * calculates the Graph Edit Distance (GED) between two graphs using the Hungarian Algorithm based on the standard cost function
-
-    * param graph1: a networkx Graph object representing the first graph
-    * param graph2: a networkx Graph object representing the second graph
-
-    * return: the row indices, column indices, the minimum GED, the edit path and the matching between the two graphs
-
-    * description:
-    TODO
-    """
-    nodes1 = sorted(graph1.nodes)
-    nodes2 = sorted(graph2.nodes)
-
-    n1, n2 = len(nodes1), len(nodes2)
-    cost_matrix = np.full((n1, n2), np.inf)  # Initialisiere hohe Kosten
-    
-    for i, u in enumerate(nodes1):
-        for j, v in enumerate(nodes2):
-            label_cost = 1 if graph1.nodes[u]["label"] != graph2.nodes[v]["label"] else 0
-            neighbor_cost = abs(len(list(graph1.neighbors(u))) - len(list(graph2.neighbors(v))))
-            cost_matrix[i, j] = label_cost + neighbor_cost
-
-    row_ind, col_ind = linear_sum_assignment(cost_matrix)
-    matching = [(nodes1[i], nodes2[j]) for i, j in zip(row_ind, col_ind)]
-    edit_path = derive_edit_path(graph1, graph2, row_ind, col_ind)
-
-    min_ged = len(edit_path)
-
-    return row_ind, col_ind, min_ged, edit_path, matching
-
-def standard_bgm_matrix(graphs):
-    """
-    * calculates the GED cost matrix between a set of graphs using the Hungarian Algorithm based on the standard cost function
-
-    * param graphs: a dictionary containing networkx Graph objects representing the graphs
-    
-    * return: the GED cost matrix between the graphs, the edit paths and the matchings between the graphs
-
-    * description:
-    TODO
-    """
-    basetime = t.time()
-
-    # create the cost matrix, edit paths and matchings
-    graph_ids = list(graphs.keys())
-    cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0)
-    edit_paths = {}
-    matchings = {}
-
-    # use concurrent.futures to parallelize the calculation of the GED cost matrix
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = {}
-        # calculate the GED between all pairs of graphs
-        for i, j in combinations(range(len(graph_ids)), 2):
-            futures[(i, j)] = executor.submit(standard_bgm, graphs[graph_ids[i]], graphs[graph_ids[j]])
-
-        # get the results of the futures and store them in the cost matrix, edit paths and matchings
-        for (i, j), future in futures.items():
-            row_ind, col_ind, min_GED, edit_path, matching = future.result()
-            cost_matrix[i, j] = cost_matrix[j, i] = min_GED
-            edit_paths[(i, j)] = edit_paths[(j, i)] = edit_path
-            matchings[(i, j)] = matchings[(j, i)] = matching
-
-    print(f"Calculating the cost matrix: {t.time() - basetime}s")
-    print("\n")
-    return cost_matrix, edit_paths, matchings
 
 
 

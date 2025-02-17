@@ -26,11 +26,17 @@ def cluster_graphs(graphs, cost_matrix):
         # find the smallest distance to each cluster
         distances = {label: [] for label in set(graph_labels)}
         for label,cluster in clusters.items():
-            cluster_cost = float("inf")
+            # cluster_cost = float("inf")
+            # for cluster_graph_id in cluster:
+            #     if cost_matrix[graph_id - 1, cluster_graph_id - 1] < cluster_cost:
+            #         cluster_cost = cost_matrix[graph_id - 1, cluster_graph_id - 1]
+            # distances[label] = cluster_cost
+
+            cluster_cost = 0
             for cluster_graph_id in cluster:
-                if cost_matrix[graph_id - 1, cluster_graph_id - 1] < cluster_cost:
-                    cluster_cost = cost_matrix[graph_id - 1, cluster_graph_id - 1]
-            distances[label] = cluster_cost
+                cluster_cost += cost_matrix[graph_id - 1, cluster_graph_id - 1]
+            distances[label] = cluster_cost / len(cluster)
+
         # add the graph to the cluster with the smallest distance
         min_index, min_distance = None, float("inf")
         for index, distance in distances.items():
@@ -48,7 +54,7 @@ if __name__ == "__main__":
 
     print("CNT")
     used_graphs = {key: graphs[key] for key in list(graphs.keys())[:n]}
-    cost_matrixs = main.calculate_cost_matrix(used_graphs)[0]
+    cost_matrixs = main.calculate_cost_matrix(graphs=used_graphs, height=5)[0]
     print(np.mean(cost_matrixs))  # Sollte <class 'numpy.ndarray'> sein, nicht <class 'list'>
 
     clusters = cluster_graphs(used_graphs, cost_matrixs)

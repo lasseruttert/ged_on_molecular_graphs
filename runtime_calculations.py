@@ -124,6 +124,7 @@ if __name__ == "__main__":
     GEDs_cnt = []
     GEDs_bgm = []
     GEDs_diff = []
+    cache = {}
     for height in heights:
         print(f"Height: {height}")
         GED_cnt = 0
@@ -131,7 +132,7 @@ if __name__ == "__main__":
         for i in range(100):
             for j in range(100):
                 print(height,i,j)
-                _,_,cnt,_,_ = main.calculate_GED_bgm(graphs[i+1], graphs[j+1], height=height)
+                _,_,cnt,_,_ = main.calculate_GED_bgm(graphs[i+1], graphs[j+1],cache=cache, height=height)
                 _,_,bgm,_,_ = main.standard_bgm(graphs[i+1], graphs[j+1])
                 GED_cnt += cnt
                 GED_bgm += bgm

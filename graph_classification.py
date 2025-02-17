@@ -44,26 +44,16 @@ def classify_graph_kNN(test_graph, train_graphs, train_labels, k=3, height=8, k_
 
     return predicted_label
 
-# Precompute GED for all train-test pairs
-def precompute_geds(test_graphs, train_graphs, height=8, k_param=0):
-    nt_dict = main.create_nt_dict({**train_graphs, **test_graphs}, height, k_param)
-    ged_distances = {}
-    for test_id, test_graph in test_graphs.items():
-        ged_distances[test_id] = {}
-        for train_id, train_graph in train_graphs.items():
-            _, _, ged, _, _ = main.calculate_GED_bgm(test_graph, train_graph, nt_dict, {})
-            ged_distances[test_id][train_id] = ged
-    return ged_distances
 
-
-def precompute_geds_parallel(train_graphs, test_graphs, height=8, k_param=0):
+def precompute_geds_parallel(train_graphs, test_graphs, height=8, k_param=0, method="cnt"):
     """Parallelized GED precomputation using ProcessPoolExecutor."""
     
     all_graphs = train_graphs.copy()
     for test_graph in test_graphs.values():
         all_graphs[test_graph.graph["id"]] = test_graph.copy()
     
-    nt_dict = main.create_nt_dict(all_graphs, height, k_param)
+    if method == "cnt":
+        nt_dict = main.create_nt_dict(all_graphs, height, k_param)
     
     train_ids = list(train_graphs.keys())
     test_ids = list(test_graphs.keys())
@@ -73,7 +63,10 @@ def precompute_geds_parallel(train_graphs, test_graphs, height=8, k_param=0):
 
 
     def compute_ged(i, j, test_id, train_id, cache=cache):
-        _, _, ged, _, _ = main.calculate_GED_bgm(test_graphs[test_id], train_graphs[train_id], nt_dict, cache)
+        if method == "cnt":
+            _, _, ged, _, _ = main.calculate_GED_bgm(test_graphs[test_id], train_graphs[train_id], nt_dict, cache,5)
+        if method == "bgm":
+            _, _, ged, _, _ = main.standard_bgm(test_graphs[test_id], train_graphs[train_id])
         return i, j, ged
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -106,22 +99,33 @@ if __name__ == "__main__":
     train_labels = np.array([graphs[k].graph["label"] for k in train_graphs_keys])
     test_labels_correct = np.array([graphs[k].graph["label"] for k in test_graphs_keys])
 
-    # Precompute GED matrix
-    basetime = t.time()
-    ged_matrix, train_ids, test_ids = precompute_geds_parallel(train_graphs, test_graphs)
-    print(f"GED Matrix: {t.time() - basetime}s")
+
+    # Precompute GEDs
+    ged_matrix, train_ids, test_ids = precompute_geds_parallel(train_graphs, test_graphs, method="cnt")
 
     # Train k-NN classifier
-    knn = KNeighborsClassifier(n_neighbors=3, metric="precomputed")
+    knn1 = KNeighborsClassifier(n_neighbors=3, metric="precomputed")
 
-
-
-    knn.fit(ged_matrix.T, train_labels)  # Fit using GED matrix
+    knn1.fit(ged_matrix.T, train_labels)  # Fit using GED matrix
 
     # Predict test labels
-    test_labels_predicted = knn.predict(ged_matrix)
+    test_labels_predicted = knn1.predict(ged_matrix)
 
     correct = np.sum(test_labels_predicted == test_labels_correct)
-    print(f"Accuracy: {correct / n_test}")
+    print(f"CNT - Accuracy: {correct / n_test}")
+
+    # Precompute GEDs using BGM
+    ged_matrix_bgm, train_ids, test_ids = precompute_geds_parallel(train_graphs, test_graphs, method="bgm")
+
+    # Train k-NN classifier
+    knn2 = KNeighborsClassifier(n_neighbors=3, metric="precomputed")
+
+    knn2.fit(ged_matrix_bgm.T, train_labels)  # Fit using GED matrix
+
+    # Predict test labels
+    test_labels_predicted_bgm = knn2.predict(ged_matrix_bgm)
+
+    correct_bgm = np.sum(test_labels_predicted_bgm == test_labels_correct)
+    print(f"BGM - Accuracy: {correct_bgm / n_test}")
 
     print("Done")
