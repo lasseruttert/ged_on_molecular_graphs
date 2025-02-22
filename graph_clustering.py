@@ -2,7 +2,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import main as main
 
-def cluster_graphs(graphs, cost_matrix):
+def cluster_graphs(graphs, height = 5, method = "cnt"):
+    if method == "cnt":
+        cost_matrix = main.calculate_cost_matrix(graphs, height)[0]
+    elif method == "bgm":
+        cost_matrix = main.standard_bgm_matrix(graphs)[0]
     graphss = graphs.copy()
     # get all graph labels
     graph_labels = [graphss[key].graph["label"] for key in graphss.keys()]
@@ -45,41 +49,12 @@ def cluster_graphs(graphs, cost_matrix):
                 min_distance = distance
         clusters[min_index].append(graph_id)
 
-
-    return clusters
-
-if __name__ == "__main__":
-    n = 50
-    graphs = main.load_graphs("MUTAG",n)
-
-    print("CNT")
-    used_graphs = {key: graphs[key] for key in list(graphs.keys())[:n]}
-    cost_matrixs = main.calculate_cost_matrix(graphs=used_graphs, height=5)[0]
-    print(np.mean(cost_matrixs))  # Sollte <class 'numpy.ndarray'> sein, nicht <class 'list'>
-
-    clusters = cluster_graphs(used_graphs, cost_matrixs)
-    
-    for cluster_label, cluster_graphss in clusters.items():
-        print(f"Cluster {cluster_label}")
-        print(cluster_graphss)
+    accuracy = 0
+    for label, cluster in clusters.items():
         correct = 0
-        for graph_id in cluster_graphss:
-            correct += int(graphs[graph_id].graph["label"] == cluster_label)
-        print(f"Correct: {correct}/{len(cluster_graphss)}")
+        for graph_id in cluster:
+            correct += int(graphs[graph_id].graph["label"] == label)
+        accuracy += correct / len(cluster)
+    accuracy /= len(clusters)
 
-    print("BGM")
-    used_graphs = {key: graphs[key] for key in list(graphs.keys())[:n]}    
-    cost_matrixx = main.standard_bgm_matrix(used_graphs)[0]
-    print(np.mean(cost_matrixx))  # Sollte <class 'numpy.ndarray'> sein, nicht <class 'list'>
-
-    clusters = cluster_graphs(used_graphs, cost_matrixx)
-
-    for cluster_label, cluster_graphs in clusters.items():
-        print(f"Cluster {cluster_label}")
-        print(cluster_graphs)
-        correct = 0
-        for graph_id in cluster_graphs:
-            correct += int(graphs[graph_id].graph["label"] == cluster_label)
-        print(f"Correct: {correct}/{len(cluster_graphs)}")
-
-    print("Done!")
+    return clusters, accuracy

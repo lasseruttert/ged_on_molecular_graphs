@@ -14,11 +14,11 @@ def plot_cost_matrix(cost_matrix, title="Cost Matrix"):
 
 
 if __name__ == "__main__":
-    n = 20
+    n = 40
 
     graphs = main.load_graphs("MUTAG", n)
 
-    cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix(graphs, 8, 0)
+    cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix(graphs, 5, 0)
 
     # plot_cost_matrix(cost_matrix, title="Cost Matrix")
 

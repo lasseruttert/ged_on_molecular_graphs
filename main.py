@@ -181,17 +181,18 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
             return cache[key] * pow(base=0.5, exp=depth)
 
         # n is the maximum number of children of the roots of the two trees
-        children1 = sorted(tree1.neighbors(next(iter(tree1.nodes))))
-        children2 = sorted(tree2.neighbors(next(iter(tree2.nodes))))
+        children1 = sorted(tree1.neighbors(list(tree1.nodes)[0]))
+        children2 = sorted(tree2.neighbors(list(tree2.nodes)[0]))
         n = max(len(children1), len(children2))
 
         # add undefined nodes to the trees, if the roots have a different number of children
-        tree1_padded = tree1
-        tree2_padded = tree2
 
         if len(children1) != len(children2):
-            tree1_padded = pad(tree1, n)
-            tree2_padded = pad(tree2, n)
+            tree1_padded = pad(tree1.copy(), n)
+            tree2_padded = pad(tree2.copy(), n)
+        else:
+            tree1_padded = tree1
+            tree2_padded = tree2
 
         root1 = list(tree1_padded.nodes())[0] # get the root of the first tree
         root2 = list(tree2_padded.nodes())[0] # get the root of the second tree
@@ -392,6 +393,26 @@ def create_nt_dict(graphs, height, k):
         for node in sorted(graphs[graph_id].nodes):
             nt = build_nt(graphs[graph_id], node, height, k)
             nt_dict[(graph_id, node)] = calculate_costs(nt), create_subgraph_dict(nt) # use graph_id and node as key for the dictionary
+    return nt_dict
+
+def create_nt_dict_ns(graphs, height, k):
+    """
+    * creates a dictionary of neighborhood trees for each node in a graph
+
+    * param graphs: a dictionary containing networkx Graph objects representing the graphs
+    * param height: the height of the neighborhood trees
+    * param k: the maximum height difference for redundancy elimination
+
+    * return: a dictionary containing the neighborhood trees with their subgraph dictionary for each node in a graph
+
+    * description:
+    * The function creates a dictionary of neighborhood trees for each node in a graph by calling the build_nt for each node
+    """
+    nt_dict = {}
+    for graph_id in graphs:
+        for node in sorted(graphs[graph_id].nodes):
+            nt = build_nt(graphs[graph_id], node, height, k)
+            nt_dict[(graph_id, node)] = nt 
     return nt_dict
 
 # ? The following functions are used to calculate the cost matrix, edit paths and matchings between the graphs
