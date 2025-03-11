@@ -43,16 +43,14 @@ def precompute_geds_parallel(train_graphs, test_graphs, height=8, k_param=0, met
     return ged_matrix, train_ids, test_ids
 
 def train_kNN(graphs, n_train, n_test,height = 5, k_param = 0, method="cnt"):
-    # Select random graphs for training and testing
-    train_graphs_keys = r.sample(list(graphs.keys()), n_train)
-    train_graphs = {k: graphs[k] for k in train_graphs_keys}
+    # select first n_train graphs as training set
+    train_graphs = {i: graphs[i] for i in range(1, n_train + 1)}
+    # select next n_test graphs as test set
+    test_graphs = {i: graphs[i] for i in range(n_train + 1, n_train + n_test + 1)}
+    # create labels
+    train_labels = [graph.graph["label"] for graph in train_graphs.values()]
+    test_labels_correct = [graph.graph["label"] for graph in test_graphs.values()]
 
-    remaining_keys = list(set(graphs.keys()) - set(train_graphs_keys))
-    test_graphs_keys = r.sample(remaining_keys, n_test)
-    test_graphs = {k: graphs[k] for k in test_graphs_keys}
-
-    train_labels = np.array([graphs[k].graph["label"] for k in train_graphs_keys])
-    test_labels_correct = np.array([graphs[k].graph["label"] for k in test_graphs_keys])
 
     # Precompute GEDs
     ged_matrix, train_ids, test_ids = precompute_geds_parallel(train_graphs, test_graphs, height=height, k_param=k_param, method=method)

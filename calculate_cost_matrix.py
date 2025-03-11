@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import main as main
 import seaborn as sns
+import graph_classification as gc
 
 # Assuming cost_matrix is your matrix
 def plot_cost_matrix(cost_matrix, title="Cost Matrix"):

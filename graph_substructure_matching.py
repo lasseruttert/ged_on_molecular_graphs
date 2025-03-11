@@ -64,13 +64,15 @@ if __name__ == "__main__":
     nodes2 = [4,5,7,8,9,10]
     nodes3 = [9,10,11,12,13,14]
 
+    # main.print_two_graphs(graphs[1],ring)
+
     subgraph1 = create_subgraph(graphs[1],nodes1)
     subgraph2 = create_subgraph(graphs[1],nodes2)
     subgraph3 = create_subgraph(graphs[1],nodes3)
 
-    # main.print_two_graphs(subgraph1,ring)
-    # main.print_two_graphs(subgraph2,ring)
-    # main.print_two_graphs(subgraph3,ring)
+    main.print_two_graphs(subgraph1,ring)
+    main.print_two_graphs(subgraph2,ring)
+    main.print_two_graphs(subgraph3,ring)
     
     _,_,ged1,e1,m1 = main.calculate_GED_bgm(subgraph1, ring)
     _,_,ged2,e2,m2 = main.calculate_GED_bgm(subgraph2, ring)

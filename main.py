@@ -608,18 +608,24 @@ def calculate_cost_matrix(graphs, height=8, k=0):
     matchings = {}
 
     # use concurrent.futures to parallelize the calculation of the GED cost matrix
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = {}
-        # calculate the GED between all pairs of graphs
-        for i, j in combinations(range(len(graph_ids)), 2):
-            futures[(i, j)] = executor.submit(calculate_GED_bgm, graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     futures = {}
+    #     # calculate the GED between all pairs of graphs
+    #     for i, j in combinations(range(len(graph_ids)), 2):
+    #         futures[(i, j)] = executor.submit(calculate_GED_bgm, graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
 
-        # get the results of the futures and store them in the cost matrix, edit paths and matchings
-        for (i, j), future in futures.items():
-            row_ind, col_ind, min_GED, edit_path, matching = future.result()
-            cost_matrix[i, j] = cost_matrix[j, i] = min_GED
-            edit_paths[(i, j)] = edit_paths[(j, i)] = edit_path
-            matchings[(i, j)] = matchings[(j, i)] = matching
+    #     # get the results of the futures and store them in the cost matrix, edit paths and matchings
+    #     for (i, j), future in futures.items():
+    #         row_ind, col_ind, min_GED, edit_path, matching = future.result()
+    #         cost_matrix[i, j] = cost_matrix[j, i] = min_GED
+    #         edit_paths[(i, j)] = edit_paths[(j, i)] = edit_path
+    #         matchings[(i, j)] = matchings[(j, i)] = matching
+
+    for i, j in combinations(range(len(graph_ids)), 2):
+        row_ind, col_ind, min_GED, edit_path, matching = calculate_GED_bgm(graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
+        cost_matrix[i, j] = cost_matrix[j, i] = min_GED
+        edit_paths[(i, j)] = edit_paths[(j, i)] = edit_path
+        matchings[(i, j)] = matchings[(j, i)] = matching
 
     print(f"Calculating the cost matrix: {t.time() - basetime}s")
     print("\n")

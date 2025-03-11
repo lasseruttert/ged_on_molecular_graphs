@@ -18,8 +18,8 @@ if __name__ == "__main__":
     np.savetxt(f"MUTAG_full_cost_matrix.csv", mutag_full_matrix, delimiter=",",fmt="%d")
     plt.figure(figsize=(10, 8))
     sns.heatmap(mutag_full_matrix, annot=True, fmt="d", cmap="coolwarm", cbar=True)
-    plt.xlabel('Graph 1 Nodes')
-    plt.ylabel('Graph 2 Nodes')
+    plt.xlabel('Graphs')
+    plt.ylabel('Graphs')
     plt.title("MUTAG - Full - CNT")
     plt.savefig("MUTAG_full_cost_matrix.png")
     plt.clf()
@@ -30,9 +30,9 @@ if __name__ == "__main__":
     mutag_20_cnt,_,_ = main.calculate_cost_matrix(mutag_20, height=5)
     np.savetxt(f"MUTAG_20_cost_matrix.csv", mutag_20_cnt, delimiter=",",fmt="%d")
     plt.figure(figsize=(10, 8))
-    sns.heatmap(mutag_20_cnt, annot=True, fmt="d", cmap="coolwarm", cbar=True)
-    plt.xlabel('Graph 1 Nodes')
-    plt.ylabel('Graph 2 Nodes')
+    sns.heatmap(mutag_20_cnt, annot=True, fmt="d", cmap="plasma", cbar=True)
+    plt.xlabel('Graphs')
+    plt.ylabel('Graphs')
     plt.title("MUTAG - 20 - CNT")
     plt.savefig("MUTAG_20_cost_matrix.png")
     plt.clf()
@@ -43,9 +43,9 @@ if __name__ == "__main__":
     mutag_20_bgm,_,_ = main.standard_bgm_matrix(mutag_20)
     np.savetxt(f"MUTAG_20_bgm_cost_matrix.csv", mutag_20_bgm, delimiter=",",fmt="%d")
     plt.figure(figsize=(10, 8))
-    sns.heatmap(mutag_20_bgm, annot=True, fmt="d", cmap="coolwarm", cbar=True)
-    plt.xlabel('Graph 1 Nodes')
-    plt.ylabel('Graph 2 Nodes')
+    sns.heatmap(mutag_20_bgm, annot=True, fmt="d", cmap="plasma", cbar=True)
+    plt.xlabel('Graphs')
+    plt.ylabel('Graphs')
     plt.title("MUTAG - 20 - BGM")
     plt.savefig("MUTAG_20_bgm_cost_matrix.png")
     plt.clf()
@@ -55,9 +55,9 @@ if __name__ == "__main__":
     mutag_20_diff = mutag_20_cnt - mutag_20_bgm
     np.savetxt(f"MUTAG_20_diff_cost_matrix.csv", mutag_20_diff, delimiter=",",fmt="%d")
     plt.figure(figsize=(10, 8))
-    sns.heatmap(mutag_20_diff, annot=True, fmt="d", cmap="coolwarm", cbar=True)
-    plt.xlabel('Graph 1 Nodes')
-    plt.ylabel('Graph 2 Nodes')
+    sns.heatmap(mutag_20_diff, annot=True, fmt="d", cmap="PuOr", cbar=True)
+    plt.xlabel('Graphs')
+    plt.ylabel('Graphs')
     plt.title("MUTAG - 20 - Diff")
     plt.savefig("MUTAG_20_diff_cost_matrix.png")
     plt.clf()
@@ -103,6 +103,8 @@ if __name__ == "__main__":
     plt.xlabel("Height")
     plt.ylabel("Runtime")
     plt.title("Runtime of GED calculation: MUTAG")
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.legend()
     plt.savefig("runtime_ged_MUTAG.png")
     plt.clf()
     print("MUTAG - single GED: Done")
@@ -112,6 +114,8 @@ if __name__ == "__main__":
     plt.xlabel("Height")
     plt.ylabel("Avg. GED")
     plt.title("Average of GED calculation: MUTAG")
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.legend()
     plt.savefig("avg_GED_MUTAG.png")
     plt.clf()
     print("MUTAG - avg GED: Done")
@@ -143,8 +147,8 @@ if __name__ == "__main__":
             print(f"Run: {i}")
             for j in range(100):
                 basetime = t.time()
-                GED_cnt += main.standard_bgm(ptc_fm[i+1], ptc_fm[j+1])[2]
-                runtime_bgm += t.time() - basetime
+                GED_cnt += main.calculate_GED_bgm(ptc_fm[i+1], ptc_fm[j+1], height=height, cache=cache)[2]
+                runtime_cnt += t.time() - basetime
         runtimes_cnt.append(runtime_cnt / 10000)
         GEDs_cnt.append(GED_cnt / 10000)
 
@@ -153,6 +157,8 @@ if __name__ == "__main__":
     plt.xlabel("Height")
     plt.ylabel("Runtime")
     plt.title("Runtime of GED calculation: PTC_FM")
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.legend()
     plt.savefig("runtime_ged_PTC_FM.png")
     plt.clf()
     print("PTC_FM - single GED: Done")
@@ -162,6 +168,8 @@ if __name__ == "__main__":
     plt.xlabel("Height")
     plt.ylabel("Avg. GED")
     plt.title("Average of GED calculation: PTC_FM")
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.legend()
     plt.savefig("avg_GED_PTC_FM.png")
     plt.clf()
     print("PTC_FM - avg GED: Done")
@@ -191,6 +199,7 @@ if __name__ == "__main__":
     # plt.xlabel("Height")
     # plt.ylabel("Runtime")
     # plt.title("Runtime of GED calculation: ENZYMES")
+    # plt.legend()
     # plt.savefig("runtime_ged_ENZYMES.png")
     # plt.clf()
     # print("ENZYMES - single GED: Done")
@@ -218,6 +227,8 @@ if __name__ == "__main__":
     plt.xlabel("Height")
     plt.ylabel("Runtime")
     plt.title("Runtime of cost matrix calculation: MUTAG")
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.legend()
     plt.savefig("runtime_cost_matrix_MUTAG.png")    
     plt.clf()
     print("MUTAG - 20 x 20 Matrix: Done")
@@ -225,41 +236,43 @@ if __name__ == "__main__":
 
     # ? Graph-classification
 
-    # # * MUTAG - 50 Train, 50 Test
-    mutag = main.load_graphs("MUTAG")
-    accuracies_cnt = []
-    accuracies_bgm = []
+    # # * MUTAG - 90 Train, 90 Test
+    # mutag = main.load_graphs("MUTAG")
+    # accuracies_cnt = []
+    # accuracies_bgm = []
 
-    m = 20
+    # m = 20
 
-    for height in heights:
-        accuracy_bgm = 0
-        for i in range(m):
-            accuracy_bgm += train_kNN(mutag, 50, 50, method="bgm")
-        accuracies_bgm.append(accuracy_bgm / m)
+    # for height in heights:
+    #     accuracy_bgm = 0
+    #     for i in range(m):
+    #         accuracy_bgm += train_kNN(mutag, 90, 90, method="bgm")
+    #     accuracies_bgm.append(accuracy_bgm / m)
     
-    for height in heights:
-        print(f"Height: {height}")
-        accuracy_cnt = 0
-        for i in range(m):
-            print(f"Run: {i}")
-            accuracy_cnt += train_kNN(mutag, 50, 50, height=height, method="cnt")
-        accuracies_cnt.append(accuracy_cnt / m)
+    # for height in heights:
+    #     print(f"Height: {height}")
+    #     accuracy_cnt = 0
+    #     for i in range(m):
+    #         print(f"Run: {i}")
+    #         accuracy_cnt += train_kNN(mutag, 90, 90, height=height, method="cnt")
+    #     accuracies_cnt.append(accuracy_cnt / m)
 
-    plt.plot(heights, accuracies_cnt, label="cnt", color="orange")
-    plt.plot(heights, accuracies_bgm, label="bgm", color="blue")
-    plt.xlabel("Height")
-    plt.ylabel("Accuracy")
-    plt.title("Accuracy of k-NN classification: MUTAG")
-    plt.savefig("accuracy_kNN_MUTAG.png")
-    plt.clf()
-    print("MUTAG - 50 Train, 50 Test: Done")
+    # plt.plot(heights, accuracies_cnt, label="cnt", color="orange")
+    # plt.plot(heights, accuracies_bgm, label="bgm", color="blue")
+    # plt.xlabel("Height")
+    # plt.ylabel("Accuracy")
+    # plt.title("Accuracy of k-NN classification: MUTAG")
+    # plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    # plt.legend()
+    # plt.savefig("accuracy_kNN_MUTAG.png")
+    # plt.clf()
+    # print("MUTAG - 90 Train, 90 Test: Done")
 
 
     # ? Graph-clustering
 
-    # * MUTAG - 50 - Clustering
-    mutag_50 = main.load_graphs("MUTAG",50)
+    # * MUTAG - 90 - Clustering
+    mutag_90 = main.load_graphs("MUTAG",90)
     accuracies_cnt = []
     accuracies_bgm = []
 
@@ -268,7 +281,7 @@ if __name__ == "__main__":
     for height in heights:
         accuracy_bgm = 0
         for i in range(m):
-            accuracy_bgm += cluster_graphs(mutag_50, method="bgm")[1]
+            accuracy_bgm += cluster_graphs(mutag_90, method="bgm")[1]
         accuracies_bgm.append(accuracy_bgm / m)
     
     for height in heights:
@@ -276,7 +289,7 @@ if __name__ == "__main__":
         accuracy_cnt = 0
         for i in range(m):
             print(f"Run: {i}")
-            accuracy_cnt += cluster_graphs(mutag_50, height=height, method="cnt")[1]
+            accuracy_cnt += cluster_graphs(mutag_90, height=height, method="cnt")[1]
         accuracies_cnt.append(accuracy_cnt / m)
 
     plt.plot(heights, accuracies_cnt, label="cnt", color="orange")
@@ -284,6 +297,8 @@ if __name__ == "__main__":
     plt.xlabel("Height")
     plt.ylabel("Accuracy")
     plt.title("Accuracy of clustering: MUTAG")
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.legend()
     plt.savefig("accuracy_clustering_MUTAG.png")
     plt.clf()
-    print("MUTAG - 50 - Clustering: Done")
+    print("MUTAG - 90 - Clustering: Done")
