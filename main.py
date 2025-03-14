@@ -129,7 +129,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
     * return: the SDTED between the two trees
 
     * description:
-    TODO
+    * The function calculates the structure and depth preserving tree edit distance (SDTED) between two trees in a recursive manner using a cache to store the results of the calculations
     """
     def pad(tree, number):
         """
@@ -174,7 +174,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         * return: the SDTED between the two trees
 
         * description:
-        TODO
+        * The function calculates the SDTED between two trees recursively in a bottom-up manner
         """
         # check if the calculation is already in the cache, if so return the result
         key = (tree1.graph["encoding"], tree2.graph["encoding"])
@@ -528,56 +528,6 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
     
     return edit_path #// , edit_cost
 
-def edge_cost_matrix(graph1, graph2, matching):
-    e1, e2 = list(graph1.edges), list(graph2.edges)
-    n1, n2 = len(graph1.edges), len(graph2.edges)
-    size = n1 + n2
-    cost_matrix = np.full((size, size), fill_value=10000)
-    graph_edited = graph1.copy()
-    total_cost = 0
-    #e1p = []
-    #e2p = []
-    for i in range(n1):
-        for j in range(n2):                
-            ids1 = e1[i]
-            ids1_matching = (matching.get(ids1[0]), matching.get(ids1[1]))
-            ids2 = e2[j]
-            if(ids1_matching[0] == None or ids1_matching[1] == None):
-                #if(ids1 not in e1p):
-                    #total_cost += 1
-                    #e1p.append(ids1)
-                    continue
-            elif(ids2[0] not in matching.values() or ids2[1] not in matching.values()):
-                #if(ids2 not in e2p):
-                    #total_cost += 1
-                    #e2p.append(ids2)
-                    continue
-            else:    
-                ids1_matchingint = ((matching.get(ids1[0])), int(matching.get(ids1[1])))
-                if ids1_matchingint == ids2:
-                    #isomorph
-                    if graph1[e1[i][0]][e1[i][1]]["label"] == graph2[e2[j][0]][e2[j][1]]["label"]:
-                        cost_matrix[i, j] = 0
-                    else:
-                        #Kantensubstitution
-                        cost_matrix[i, j] = 1
-                else:
-                    cost_matrix[i, j] = 1000
-
-    for i in range(n2, size):
-        cost_matrix[i-n2, i] = 1
-
-    for j in range(n1, size):
-        cost_matrix[j, j-n1] = 1 
-
-    for i in range(n2, size):
-        for j in range(n1, size):
-            cost_matrix[j, i] = 0
-
-    row_ind, col_ind = linear_sum_assignment(cost_matrix)
-    total_cost += cost_matrix[row_ind, col_ind].sum()
-    return total_cost
-
 
 def calculate_GED_bgm(graph1, graph2, nt_dict = None, cache = {}, height=8, k=0):
     """
@@ -695,7 +645,8 @@ def standard_bgm(graph1, graph2):
     * return: the row indices, column indices, the minimum GED, the edit path and the matching between the two graphs
 
     * description:
-    TODO
+    * The function calculates the Graph Edit Distance (GED) between two graphs using the Hungarian Algorithm based on the standard cost function
+    * The usual heuristic of BGM is extended by the number of neighbors of the nodes
     """
     nodes1 = sorted(graph1.nodes)
     nodes2 = sorted(graph2.nodes)
@@ -726,7 +677,7 @@ def standard_bgm_matrix(graphs):
     * return: the GED cost matrix between the graphs, the edit paths and the matchings between the graphs
 
     * description:
-    TODO
+    * The function calculates the GED cost matrix between a set of graphs using the Hungarian Algorithm based on the standard cost function
     """
     basetime = t.time()
 
