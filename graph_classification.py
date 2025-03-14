@@ -65,3 +65,42 @@ def train_kNN(graphs, n_train, n_test,height = 5, k_param = 0, method="cnt"):
 
     correct = np.sum(test_labels_predicted == test_labels_correct)
     return (correct / n_test)
+
+def knn_graph_classification(query_graph, train_graphs, method="cnt", height=5, k_param=0):
+    distances = []
+    cache = {}
+    for train_graph in train_graphs:
+        if method == "cnt":
+            _, _, ged, _, _ = main.calculate_GED_bgm(graph1=query_graph, graph2=train_graph, cache=cache, height=height, k=k_param)
+        if method == "bgm":
+            _, _, ged, _, _ = main.standard_bgm(query_graph, train_graph)
+        distances.append(ged)
+    
+    nearest_neighbor_index = np.argmin(distances)
+    return train_graphs[nearest_neighbor_index].graph["label"]
+
+def test_knn(graphs, method="cnt", height=5, k_param=0):
+    n = len(graphs)
+    n_train = int(0.75 * n)  # 80% für Training
+    n_test = n - n_train    # 20% für Test
+    graph_list = list(graphs.values())
+
+    train_graphs = graph_list[:n_train]
+    test_graphs = graph_list[n_train:]
+
+    tp, fp, tn, fn = 0, 0 ,0 ,0
+    for i in range(1, len(test_graphs)):
+        classification = knn_graph_classification(test_graphs[i], train_graphs, method=method, height=height, k_param=k_param)
+        test_label = test_graphs[i].graph["label"]
+        if classification == 1:
+            if test_label == 1:
+                tp += 1
+            else:
+                fp += 1
+        elif classification == -1 or classification == 0:
+            if test_label == -1 or test_label == 0:
+                tn += 1
+            else:
+                fn += 1
+
+    return tp, fp, tn, fn

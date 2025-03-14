@@ -87,7 +87,8 @@ def build_nt(graph, root, height, k):
     * The function builds a neighborhood tree of a graph with a given root node, height and k
     TODO add more description
     """
-    height = min(height, nx.diameter(graph)+k) 
+    if nx.is_connected(graph):
+        height = min(height, nx.diameter(graph)+k) 
     tree = nx.DiGraph()
     tree.add_node(root, label=graph.nodes[root]["label"], height=0)
     D = {} # D[v] is the depth of node v
@@ -527,6 +528,56 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
     
     return edit_path #// , edit_cost
 
+def edge_cost_matrix(graph1, graph2, matching):
+    e1, e2 = list(graph1.edges), list(graph2.edges)
+    n1, n2 = len(graph1.edges), len(graph2.edges)
+    size = n1 + n2
+    cost_matrix = np.full((size, size), fill_value=10000)
+    graph_edited = graph1.copy()
+    total_cost = 0
+    #e1p = []
+    #e2p = []
+    for i in range(n1):
+        for j in range(n2):                
+            ids1 = e1[i]
+            ids1_matching = (matching.get(ids1[0]), matching.get(ids1[1]))
+            ids2 = e2[j]
+            if(ids1_matching[0] == None or ids1_matching[1] == None):
+                #if(ids1 not in e1p):
+                    #total_cost += 1
+                    #e1p.append(ids1)
+                    continue
+            elif(ids2[0] not in matching.values() or ids2[1] not in matching.values()):
+                #if(ids2 not in e2p):
+                    #total_cost += 1
+                    #e2p.append(ids2)
+                    continue
+            else:    
+                ids1_matchingint = ((matching.get(ids1[0])), int(matching.get(ids1[1])))
+                if ids1_matchingint == ids2:
+                    #isomorph
+                    if graph1[e1[i][0]][e1[i][1]]["label"] == graph2[e2[j][0]][e2[j][1]]["label"]:
+                        cost_matrix[i, j] = 0
+                    else:
+                        #Kantensubstitution
+                        cost_matrix[i, j] = 1
+                else:
+                    cost_matrix[i, j] = 1000
+
+    for i in range(n2, size):
+        cost_matrix[i-n2, i] = 1
+
+    for j in range(n1, size):
+        cost_matrix[j, j-n1] = 1 
+
+    for i in range(n2, size):
+        for j in range(n1, size):
+            cost_matrix[j, i] = 0
+
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+    total_cost += cost_matrix[row_ind, col_ind].sum()
+    return total_cost
+
 
 def calculate_GED_bgm(graph1, graph2, nt_dict = None, cache = {}, height=8, k=0):
     """
@@ -959,7 +1010,6 @@ def load_graphs(dataset, n = None):
                 graphs[graph_id].edges[target, source]["label"] = "dummy"
         i += 1
     return graphs
-
 
 
 # ! OLD CODE WHICH USED SDTED AS GED CALCULATION (IGNORE THIS)
