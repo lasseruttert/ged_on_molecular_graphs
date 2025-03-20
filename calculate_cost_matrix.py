@@ -20,7 +20,11 @@ if __name__ == "__main__":
 
     graphs = main.load_graphs("MUTAG", n)
 
-    # cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix(graphs, 5, 0)
+    graph1 = graphs[1]
+    graph1_nt = main.build_nt(graph1,1, 8, 3)
+    main.print_two_graphs(graph1, graph1_nt)
+
+    cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix(graphs, 1, 0)
 
     # plot_cost_matrix(cost_matrix, title="Cost Matrix")
 
@@ -40,25 +44,25 @@ if __name__ == "__main__":
     #             print("\n")
     #             print("\n")
 
-    # bgm_cost_matrix, bgm_edit_matrix, bgm_matchings = main.standard_bgm_matrix({k: graphs[k] for k in list(graphs)[:n]})
+    bgm_cost_matrix, bgm_edit_matrix, bgm_matchings = main.standard_bgm_matrix(graphs)
 
     # print(bgm_cost_matrix)
 
-    # # avg value of cost_matrix
-    # print(f"Mean")
-    # print(np.mean(cost_matrix))
-    # print(np.mean(bgm_cost_matrix))
-    # print("--------------------")
-    # print(f"Average")
-    # print(np.average(cost_matrix))
-    # print(np.average(bgm_cost_matrix))
-    # print("--------------------")
-    # print(f"Max. Difference")
-    # # highest difference in cost_matrix
-    # # find min, not on diagonal
-    # print(np.max(cost_matrix) - np.min(cost_matrix[np.nonzero(cost_matrix)]))
-    # print(np.max(bgm_cost_matrix) - np.min(bgm_cost_matrix[np.nonzero(bgm_cost_matrix)]))
-    # print("--------------------")
+    # avg value of cost_matrix
+    print(f"Mean")
+    print(np.mean(cost_matrix))
+    print(np.mean(bgm_cost_matrix))
+    print("--------------------")
+    print(f"Average")
+    print(np.average(cost_matrix))
+    print(np.average(bgm_cost_matrix))
+    print("--------------------")
+    print(f"Max. Difference")
+    # highest difference in cost_matrix
+    # find min, not on diagonal
+    print(np.max(cost_matrix) - np.min(cost_matrix[np.nonzero(cost_matrix)]))
+    print(np.max(bgm_cost_matrix) - np.min(bgm_cost_matrix[np.nonzero(bgm_cost_matrix)]))
+    print("--------------------")
 
     # for i in range(n): 
     #     for j in range(n):
@@ -79,23 +83,9 @@ if __name__ == "__main__":
     # save cost matrix to file
     # np.savetxt(f"{dataset_name}_cost_matrix.csv", cost_matrix, delimiter=",")
 
-    # print(cost_matrix - bgm_cost_matrix)
-    # print(np.average(cost_matrix - bgm_cost_matrix))
+    print(cost_matrix - bgm_cost_matrix)
+    print(np.average(cost_matrix - bgm_cost_matrix))
 
-    # print the type of objeects in graphs
 
-    diffs = []
-    for graph1 in graphs.values():
-        for graph2 in graphs.values():
-            if graph1 == graph2:
-                continue
-            _,_,ged_cnt,_,_ = main.calculate_GED_bgm(graph1, graph2)
-            # ged_bgm = graph_edit_distance_bipartite(graph1, graph2)
-            _,_,ged_bgm,_,_ = main.standard_bgm(graph1, graph2)
-            diffs.append(ged_cnt - ged_bgm)
-
-    print(np.average(diffs))
-    print(np.max(diffs))
-    print(np.min(diffs))
 
     print("Done")

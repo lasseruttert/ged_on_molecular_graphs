@@ -3,8 +3,10 @@ import time as t
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-from graph_classification import train_kNN, test_knn
-from graph_clustering import cluster_graphs
+from graph_classification import train_kNN, test_knn, knn_matrix
+from graph_clustering import cluster_graphs, spectral_clustering, agglomerative_clustering, k_metoid_clustering
+import pandas as pd
+from bgm import bgm_matrix
 
 if __name__ == "__main__":
 
@@ -13,16 +15,38 @@ if __name__ == "__main__":
     # # ? Costmatrix
 
     # # * MUTAG - Full - CNT
-    # mutag_full = main.load_graphs("MUTAG")
+    mutag_full = main.load_graphs("MUTAG")
     # mutag_full_matrix,_,_ = main.calculate_cost_matrix(mutag_full, height=5)
     # np.savetxt(f"MUTAG_full_cost_matrix.csv", mutag_full_matrix, delimiter=",",fmt="%d")
     # plt.figure(figsize=(10, 8))
-    # sns.heatmap(mutag_full_matrix, annot=True, fmt="d", cmap="coolwarm", cbar=True)
-    # plt.xlabel('Graphs')
-    # plt.ylabel('Graphs')
-    # plt.title("MUTAG - Full - CNT")
-    # plt.savefig("MUTAG_full_cost_matrix.png")
+    # # sns.heatmap(mutag_full_matrix, annot=True, fmt="d", cmap="coolwarm", cbar=True)
+    # # plt.xlabel('Graphs')
+    # # plt.ylabel('Graphs')
+    # # plt.title("MUTAG - Full - CNT")
+    # # plt.savefig("MUTAG_full_cost_matrix.png")
     # plt.clf()
+    # mutag_full_matrix = bgm_matrix(mutag_full)
+    # np.savetxt(f"MUTAG_Matrix_bgm_leon.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+    # mutag_matrix, _, _ = main.standard_bgm_matrix(mutag_full)
+    # np.savetxt(f"MUTAG_Matrix_bgm.csv", mutag_matrix, delimiter=",",fmt="%d")
+    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=1)
+    # np.savetxt(f"MUTAG_Matrix_cnt_1.csv", mutag_matrix, delimiter=",",fmt="%d")
+    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=2)
+    # np.savetxt(f"MUTAG_Matrix_cnt_2.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=3)
+    # np.savetxt(f"MUTAG_Matrix_cnt_3.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=4)
+    # np.savetxt(f"MUTAG_Matrix_cnt_4.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=6)
+    # np.savetxt(f"MUTAG_Matrix_cnt_6.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=7)
+    # np.savetxt(f"MUTAG_Matrix_cnt_7.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=8)
+    # np.savetxt(f"MUTAG_Matrix_cnt_8.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=9)
+    # np.savetxt(f"MUTAG_Matrix_cnt.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=10)
+    # np.savetxt(f"MUTAG_Matrix_cnt_10.csv", mutag_full_matrix, delimiter=",",fmt="%d")
     # print("MUTAG - Full - CNT: Done")
 
     # # * MUTAG - 20 - CNT
@@ -119,6 +143,38 @@ if __name__ == "__main__":
     # plt.savefig("avg_GED_MUTAG.png")
     # plt.clf()
     # print("MUTAG - avg GED: Done")
+
+    # * Mutag - with baseline, using csv
+    mutag = main.load_graphs("MUTAG")
+    matrix_exact = pd.read_csv("MUTAG_Matrix_exact.csv", header=None).values
+    matrix_bgm = pd.read_csv("bipartiteMutag.csv", header=None).values
+    errors_cnt = []
+    errors_bgm = []
+    for height in heights:
+        matrix_cnt = pd.read_csv(f"MUTAG_Matrix_cnt_{height}.csv", header=None).values
+        error_cnt = 0
+        error_bgm = 0
+        for i in range(len(mutag)):
+            for j in range(len(mutag)):
+                if i == j:
+                    continue
+                error_cnt += abs(matrix_exact[i][j] - matrix_cnt[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_cnt[i][j]
+                error_bgm += abs(matrix_exact[i][j] - matrix_bgm[j][i])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm[j][i]
+        error_cnt /= len(mutag) * len(mutag)
+        error_bgm /= len(mutag) * len(mutag)
+        errors_bgm.append(error_bgm)
+        errors_cnt.append(error_cnt)
+    
+    plt.plot(heights, errors_cnt, label="cnt", color="orange")
+    plt.plot(heights, errors_bgm, label="bgm", color="blue")
+    plt.xlabel("Height")
+    plt.ylabel("Avg. Error")
+    plt.title("Average of Approximation Error: MUTAG")
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.legend()
+    plt.savefig("avg_error_MUTAG.png")
+    plt.clf()
+    print("MUTAG - avg error: Done")
 
     # # * PTC_FM - single GED
     # cache = {}
@@ -268,10 +324,12 @@ if __name__ == "__main__":
     # plt.clf()
     # print("MUTAG - 90 Train, 90 Test: Done")
 
+    # # * 1 nn classification
+
     # mutag = main.load_graphs("MUTAG")
-    # tp, fp, tn, fn = test_knn(mutag, method="cnt", height=5, k_param=0)
+    # tp, fp, tn, fn, time_took = test_knn(mutag, method="cnt", height=5, k_param=0)
     # print("MUTAG")
-    # print(f"TP: {tp}, FP: {fp}, TN: {tn}, FN: {fn}")
+    # print(f"TP: {tp}, FP: {fp}, TN: {tn}, FN: {fn}, Time: {time_took}")
 
     # print("------------------------------------")
 
@@ -280,7 +338,22 @@ if __name__ == "__main__":
     # print("AIDS")
     # print(f"TP: {tp}, FP: {fp}, TN: {tn}, FN: {fn}")
 
+    # # * 3nn classification using matrix
+    # mutag = main.load_graphs("MUTAG")
+    # print("MUTAG - 3nn Klassifikation")
+    # print("--------------------------------")
+    # mutag_matrix = pd.read_csv("MUTAG_Matrix_exact.csv", header=None).values
+    # exact_acc = knn_matrix(mutag, mutag_matrix, test_size=0.2)
+    # print(f"Exact Accuracy: {exact_acc}")
 
+    # mutag_matrix = pd.read_csv("MUTAG_Matrix_cnt_5.csv", header=None).values
+    # cnt_acc = knn_matrix(mutag, mutag_matrix, test_size=0.2)
+    # print(f"CNT Accuracy: {cnt_acc}")
+
+    # mutag_matrix = pd.read_csv("MUTAG_Matrix_bgm.csv", header=None).values
+    # bgm_acc = knn_matrix(mutag, mutag_matrix, test_size=0.2)
+    # print(f"BGM Accuracy: {bgm_acc}")
+    # print("--------------------------------")
 
 
     # # ? Graph-clustering
@@ -316,3 +389,34 @@ if __name__ == "__main__":
     # plt.savefig("accuracy_clustering_MUTAG.png")
     # plt.clf()
     # print("MUTAG - 90 - Clustering: Done")
+
+    # # * spectral clustering
+    # mutag = main.load_graphs("MUTAG")
+    # print("MUTAG - Clustering")
+    # print("--------------------------------")
+    # mutag_matrix = pd.read_csv("MUTAG_Matrix_exact.csv", header=None).values
+    # exact_acc_spectral = spectral_clustering(mutag, mutag_matrix, n_clusters=2)
+    # exact_acc_ac = agglomerative_clustering(mutag, mutag_matrix, n_clusters=2)
+    # exact_acc_k = k_metoid_clustering(mutag, mutag_matrix, n_clusters=2)
+
+    # mutag_matrix = pd.read_csv("MUTAG_Matrix_cnt_5.csv", header=None).values
+    # cnt_acc_spectral = spectral_clustering(mutag, mutag_matrix, n_clusters=2)
+    # cnt_acc_ac = agglomerative_clustering(mutag, mutag_matrix, n_clusters=2)
+    # cnt_acc_k = k_metoid_clustering(mutag, mutag_matrix, n_clusters=2)
+
+    # mutag_matrix = pd.read_csv("MUTAG_Matrix_bgm.csv", header=None).values
+    # bgm_acc_spectral = spectral_clustering(mutag, mutag_matrix, n_clusters=2)
+    # bgm_acc_ac = agglomerative_clustering(mutag, mutag_matrix, n_clusters=2)
+    # bgm_acc_k = k_metoid_clustering(mutag, mutag_matrix, n_clusters=2)
+    # print(f"Exact Sprectral Accuracy: {exact_acc_spectral}")
+    # print(f"CNT Sprectral Accuracy: {cnt_acc_spectral}")
+    # print(f"BGM Sprectral Accuracy: {bgm_acc_spectral}")
+    # print("--------------------------------")
+    # print(f"Exact Agglomerative Accuracy: {exact_acc_ac}")
+    # print(f"CNT Agglomerative Accuracy: {cnt_acc_ac}")
+    # print(f"BGM Agglomerative Accuracy: {bgm_acc_ac}")
+    # print("--------------------------------")
+    # print(f"Exact K-Metoid Accuracy: {exact_acc_k}")
+    # print(f"CNT K-Metoid Accuracy: {cnt_acc_k}")
+    # print(f"BGM K-Metoid Accuracy: {bgm_acc_k}")
+    # print("--------------------------------")

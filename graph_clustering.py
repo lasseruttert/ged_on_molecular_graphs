@@ -1,6 +1,11 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import main as main
+from sklearn.cluster import SpectralClustering
+from sklearn.cluster import AgglomerativeClustering
+from sklearn_extra.cluster import KMedoids
+from sklearn.metrics import accuracy_score
+from scipy.stats import mode
 
 def cluster_graphs(graphs, height = 5, method = "cnt"):
     if method == "cnt":
@@ -63,3 +68,99 @@ def cluster_graphs(graphs, height = 5, method = "cnt"):
     accuracy /= len(clusters)
 
     return clusters, accuracy
+
+def spectral_clustering(graphs, ged_matrix, n_clusters=2):
+    labels = []
+    for graph in graphs.values():
+        labels.append(graph.graph["label"])
+    labels = np.array(labels)
+
+    sigma = np.mean(ged_matrix)  # Mean of the GED matrix
+    similarity_matrix = np.exp(-ged_matrix / sigma)
+
+    sc = SpectralClustering(n_clusters=n_clusters, affinity='precomputed', random_state=42)
+    predicted_labels = sc.fit_predict(similarity_matrix)
+
+    def match_labels(predicted, true):
+        label_map = {}
+        for cluster in np.unique(predicted):
+            cluster_mask = (predicted == cluster)
+            cluster_labels = true[cluster_mask]  # Die echten Labels der Cluster-Elemente
+            most_common_label = mode(cluster_labels, keepdims=True).mode  # Sicher extrahieren
+            
+            # Falls mode() einen Skalar zurückgibt, direkt verwenden
+            if isinstance(most_common_label, np.ndarray):
+                most_common_label = most_common_label.item()  # In Zahl umwandeln
+            
+            label_map[cluster] = most_common_label
+        
+        return np.array([label_map[label] for label in predicted])
+
+    mapped_labels = match_labels(predicted_labels, labels)
+
+    # Accuracy berechnen
+    accuracy = accuracy_score(labels, mapped_labels)
+    return accuracy
+
+def agglomerative_clustering(graphs, ged_matrix, n_clusters=2):
+    labels = []
+    for graph in graphs.values():
+        labels.append(graph.graph["label"])
+    labels = np.array(labels)
+
+    sigma = np.mean(ged_matrix)  # Mean of the GED matrix
+    similarity_matrix = np.exp(-ged_matrix / sigma)
+
+    ac = AgglomerativeClustering(n_clusters=n_clusters, metric='precomputed', linkage='average')
+    predicted_labels = ac.fit_predict(similarity_matrix)
+
+    def match_labels(predicted, true):
+        label_map = {}
+        for cluster in np.unique(predicted):
+            cluster_mask = (predicted == cluster)
+            cluster_labels = true[cluster_mask]  # Die echten Labels der Cluster-Elemente
+            most_common_label = mode(cluster_labels, keepdims=True).mode  # Sicher extrahieren
+            
+            # Falls mode() einen Skalar zurückgibt, direkt verwenden
+            if isinstance(most_common_label, np.ndarray):
+                most_common_label = most_common_label.item()  # In Zahl umwandeln
+            
+            label_map[cluster] = most_common_label
+        
+        return np.array([label_map[label] for label in predicted])
+
+    mapped_labels = match_labels(predicted_labels, labels)
+
+    # Accuracy berechnen
+    accuracy = accuracy_score(labels, mapped_labels)
+    return accuracy
+
+def k_metoid_clustering(graphs, ged_matrix, n_clusters=2):
+    labels = []
+    for graph in graphs.values():
+        labels.append(graph.graph["label"])
+    labels = np.array(labels)
+
+    kmedoids = KMedoids(n_clusters=n_clusters, metric='precomputed', random_state=42)
+    predicted_labels = kmedoids.fit_predict(ged_matrix)
+
+    def match_labels(predicted, true):
+        label_map = {}
+        for cluster in np.unique(predicted):
+            cluster_mask = (predicted == cluster)
+            cluster_labels = true[cluster_mask]  # Die echten Labels der Cluster-Elemente
+            most_common_label = mode(cluster_labels, keepdims=True).mode  # Sicher extrahieren
+            
+            # Falls mode() einen Skalar zurückgibt, direkt verwenden
+            if isinstance(most_common_label, np.ndarray):
+                most_common_label = most_common_label.item()  # In Zahl umwandeln
+            
+            label_map[cluster] = most_common_label
+        
+        return np.array([label_map[label] for label in predicted])
+
+    mapped_labels = match_labels(predicted_labels, labels)
+
+    # Accuracy berechnen
+    accuracy = accuracy_score(labels, mapped_labels)
+    return accuracy

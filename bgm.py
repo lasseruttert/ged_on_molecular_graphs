@@ -148,3 +148,40 @@ def edge_del_cost(e):
 
 def edge_subst_cost(e1, e2):
     return 0 if e1["label"] == e2["label"] else 1
+
+import concurrent.futures
+from itertools import combinations
+
+def bgm_matrix(graphs):
+    """
+    * calculates the GED cost matrix between a set of graphs using the Hungarian Algorithm based on the standard cost function
+
+    * param graphs: a dictionary containing networkx Graph objects representing the graphs
+    
+    * return: the GED cost matrix between the graphs, the edit paths and the matchings between the graphs
+
+    * description:
+    * The function calculates the GED cost matrix between a set of graphs using the Hungarian Algorithm based on the standard cost function
+    """
+    basetime = t.time()
+
+    # create the cost matrix, edit paths and matchings
+    graph_ids = list(graphs.keys())
+    cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0)
+
+    # use concurrent.futures to parallelize the calculation of the GED cost matrix
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {}
+        # calculate the GED between all pairs of graphs
+        for i, j in combinations(range(len(graph_ids)), 2):
+            futures[(i, j)] = executor.submit(graph_edit_distance_bipartite, graphs[graph_ids[i]], graphs[graph_ids[j]])
+
+        # get the results of the futures and store them in the cost matrix, edit paths and matchings
+        for (i, j), future in futures.items():
+            min_GED = future.result()
+            cost_matrix[i, j] = cost_matrix[j, i] = min_GED
+
+
+    print(f"Calculating the cost matrix: {t.time() - basetime}s")
+    print("\n")
+    return cost_matrix

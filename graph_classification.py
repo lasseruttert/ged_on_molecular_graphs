@@ -5,6 +5,9 @@ import main as main
 import concurrent.futures
 from collections import Counter
 from sklearn.neighbors import KNeighborsClassifier
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 
 def precompute_geds_parallel(train_graphs, test_graphs, height=8, k_param=0, method="cnt"):
     """Parallelized GED precomputation using ProcessPoolExecutor."""
@@ -85,11 +88,16 @@ def test_knn(graphs, method="cnt", height=5, k_param=0):
     n_test = n - n_train    # 20% für Test
     graph_list = list(graphs.values())
 
-    train_graphs = graph_list[:n_train]
-    test_graphs = graph_list[n_train:]
+    # train_graphs = graph_list[:n_train]
+    # test_graphs = graph_list[n_train:]
+
+    test_graphs = graph_list[0::4]
+    train_graphs = [graph for graph in graph_list if graph not in test_graphs]
 
     tp, fp, tn, fn = 0, 0 ,0 ,0
+    start_time = t.time()
     for i in range(1, len(test_graphs)):
+        print(i)
         classification = knn_graph_classification(test_graphs[i], train_graphs, method=method, height=height, k_param=k_param)
         test_label = test_graphs[i].graph["label"]
         if classification == 1:
@@ -103,4 +111,25 @@ def test_knn(graphs, method="cnt", height=5, k_param=0):
             else:
                 fn += 1
 
-    return tp, fp, tn, fn
+    return tp, fp, tn, fn, (t.time() - start_time)
+
+def knn_matrix(graphs, ged_matrix, test_size = 0.2):
+    labels = []
+    for graph in graphs.values():
+        labels.append(graph.graph["label"])
+    labels = np.array(labels)
+
+    train_idx, test_idx = train_test_split(np.arange(len(graphs)), test_size=test_size, stratify=labels, random_state=42)
+
+    D_train = ged_matrix[np.ix_(train_idx, train_idx)]
+    D_test = ged_matrix[np.ix_(test_idx, train_idx)]
+
+    y_train = labels[train_idx]
+    y_test = labels[test_idx]
+
+    knn = KNeighborsClassifier(n_neighbors=3, metric="precomputed")
+    knn.fit(D_train, y_train)
+    y_pred = knn.predict(D_test)
+    accuracy = accuracy_score(y_test, y_pred)
+
+    return accuracy
