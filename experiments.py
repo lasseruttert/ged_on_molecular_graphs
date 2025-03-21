@@ -16,37 +16,57 @@ if __name__ == "__main__":
 
     # # * MUTAG - Full - CNT
     mutag_full = main.load_graphs("MUTAG")
-    # mutag_full_matrix,_,_ = main.calculate_cost_matrix(mutag_full, height=5)
-    # np.savetxt(f"MUTAG_full_cost_matrix.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+    # mutag_matrix,_,_ = main.calculate_cost_matrix(mutag_full, height=5)
+    # np.savetxt(f"MUTAG_full_cost_matrix.csv", mutag_matrix, delimiter=",",fmt="%d")
     # plt.figure(figsize=(10, 8))
-    # # sns.heatmap(mutag_full_matrix, annot=True, fmt="d", cmap="coolwarm", cbar=True)
+    # # sns.heatmap(mutag_matrix, annot=True, fmt="d", cmap="coolwarm", cbar=True)
     # # plt.xlabel('Graphs')
     # # plt.ylabel('Graphs')
     # # plt.title("MUTAG - Full - CNT")
     # # plt.savefig("MUTAG_full_cost_matrix.png")
     # plt.clf()
-    # mutag_full_matrix = bgm_matrix(mutag_full)
-    # np.savetxt(f"MUTAG_Matrix_bgm_leon.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+
+    # mutag_matrix = bgm_matrix(mutag_full)
+    # np.savetxt(f"MUTAG_Matrix_bgm_leon.csv", mutag_matrix, delimiter=",",fmt="%d")
+
+    # mutag_matrix = main.nx_cost_matrix(mutag_full, 0)
+    # np.savetxt(f"MUTAG_Matrix_nx_0.csv", mutag_matrix, delimiter=",",fmt="%d")
+    
+    # mutag_matrix = main.nx_cost_matrix(mutag_full, 1)
+    # np.savetxt(f"MUTAG_Matrix_nx_1.csv", mutag_matrix, delimiter=",",fmt="%d")
+
+    # mutag_matrix = main.nx_cost_matrix(mutag_full, 2)
+    # np.savetxt(f"MUTAG_Matrix_nx_2.csv", mutag_matrix, delimiter=",",fmt="%d")
+    
     # mutag_matrix, _, _ = main.standard_bgm_matrix(mutag_full)
     # np.savetxt(f"MUTAG_Matrix_bgm.csv", mutag_matrix, delimiter=",",fmt="%d")
+    
     # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=1)
     # np.savetxt(f"MUTAG_Matrix_cnt_1.csv", mutag_matrix, delimiter=",",fmt="%d")
-    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=2)
-    # np.savetxt(f"MUTAG_Matrix_cnt_2.csv", mutag_full_matrix, delimiter=",",fmt="%d")
-    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=3)
-    # np.savetxt(f"MUTAG_Matrix_cnt_3.csv", mutag_full_matrix, delimiter=",",fmt="%d")
-    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=4)
-    # np.savetxt(f"MUTAG_Matrix_cnt_4.csv", mutag_full_matrix, delimiter=",",fmt="%d")
-    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=6)
-    # np.savetxt(f"MUTAG_Matrix_cnt_6.csv", mutag_full_matrix, delimiter=",",fmt="%d")
-    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=7)
-    # np.savetxt(f"MUTAG_Matrix_cnt_7.csv", mutag_full_matrix, delimiter=",",fmt="%d")
-    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=8)
-    # np.savetxt(f"MUTAG_Matrix_cnt_8.csv", mutag_full_matrix, delimiter=",",fmt="%d")
-    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=9)
-    # np.savetxt(f"MUTAG_Matrix_cnt.csv", mutag_full_matrix, delimiter=",",fmt="%d")
-    # mutag_full_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=10)
-    # np.savetxt(f"MUTAG_Matrix_cnt_10.csv", mutag_full_matrix, delimiter=",",fmt="%d")
+    
+    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=2)
+    # np.savetxt(f"MUTAG_Matrix_cnt_2.csv", mutag_matrix, delimiter=",",fmt="%d")
+    
+    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=3)
+    # np.savetxt(f"MUTAG_Matrix_cnt_3.csv", mutag_matrix, delimiter=",",fmt="%d")
+    
+    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=4)
+    # np.savetxt(f"MUTAG_Matrix_cnt_4.csv", mutag_matrix, delimiter=",",fmt="%d")
+    
+    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=6)
+    # np.savetxt(f"MUTAG_Matrix_cnt_6.csv", mutag_matrix, delimiter=",",fmt="%d")
+    
+    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=7)
+    # np.savetxt(f"MUTAG_Matrix_cnt_7.csv", mutag_matrix, delimiter=",",fmt="%d")
+    
+    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=8)
+    # np.savetxt(f"MUTAG_Matrix_cnt_8.csv", mutag_matrix, delimiter=",",fmt="%d")
+    
+    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=9)
+    # np.savetxt(f"MUTAG_Matrix_cnt_9.csv", mutag_matrix, delimiter=",",fmt="%d")
+    
+    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=10)
+    # np.savetxt(f"MUTAG_Matrix_cnt_10.csv", mutag_matrix, delimiter=",",fmt="%d")
     # print("MUTAG - Full - CNT: Done")
 
     # # * MUTAG - 20 - CNT
@@ -147,31 +167,68 @@ if __name__ == "__main__":
     # * Mutag - with baseline, using csv
     mutag = main.load_graphs("MUTAG")
     matrix_exact = pd.read_csv("MUTAG_Matrix_exact.csv", header=None).values
-    matrix_bgm = pd.read_csv("bipartiteMutag.csv", header=None).values
+    matrix_bgm_cnt = pd.read_csv("MUTAG_Matrix_bgm.csv", header=None).values
+    matrix_bgm_leon1 = pd.read_csv("MUTAG_Matrix_bgm_leon1.csv", header=None).values
+    matrix_bgm_leon2 = pd.read_csv("MUTAG_Matrix_bgm_leon2.csv", header=None).values
+    matrix_nx_0 = pd.read_csv("MUTAG_Matrix_nx_0.csv", header=None).values
+    # matrix_nx_1 = pd.read_csv("MUTAG_Matrix_nx_1.csv", header=None).values
+    # matrix_nx_2 = pd.read_csv("MUTAG_Matrix_nx_2.csv", header=None).values
     errors_cnt = []
-    errors_bgm = []
+    errors_bgm_cnt = []
+    errors_bgm_leon1 = []
+    errors_bgm_leon2 = []
+    errors_nx_0 = []
+    # errors_nx_1 = []
+    # errors_nx_2 = []
     for height in heights:
         matrix_cnt = pd.read_csv(f"MUTAG_Matrix_cnt_{height}.csv", header=None).values
         error_cnt = 0
-        error_bgm = 0
+        error_bgm_cnt = 0
+        error_bgm_leon1 = 0
+        error_bgm_leon2 = 0
+        error_nx_0 = 0
+        # error_nx_1 = 0
+        # error_nx_2 = 0
         for i in range(len(mutag)):
             for j in range(len(mutag)):
                 if i == j:
                     continue
                 error_cnt += abs(matrix_exact[i][j] - matrix_cnt[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_cnt[i][j]
-                error_bgm += abs(matrix_exact[i][j] - matrix_bgm[j][i])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm[j][i]
-        error_cnt /= len(mutag) * len(mutag)
-        error_bgm /= len(mutag) * len(mutag)
-        errors_bgm.append(error_bgm)
+                error_bgm_cnt += abs(matrix_exact[i][j] - matrix_bgm_cnt[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm_cnt[i][j]
+                error_bgm_leon1 += abs(matrix_exact[i][j] - matrix_bgm_leon1[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm_leon1[i][j]
+                error_bgm_leon2 += abs(matrix_exact[i][j] - matrix_bgm_leon2[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm_leon2[i][j]
+                error_nx_0 += abs(matrix_exact[i][j] - matrix_nx_0[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_nx_0[i][j]
+                # error_nx_1 += abs(matrix_exact[i][j] - matrix_nx_1[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_nx_1[i][j]
+                # error_nx_2 += abs(matrix_exact[i][j] - matrix_nx_2[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_nx_2[i][j]
+        error_cnt /= len(mutag) * len(mutag) - len(mutag)
+        error_bgm_cnt /= len(mutag) * len(mutag) - len(mutag)
+        error_bgm_leon1 /= len(mutag) * len(mutag) - len(mutag)
+        error_bgm_leon2 /= len(mutag) * len(mutag) - len(mutag)
+        error_nx_0 /= len(mutag) * len(mutag) - len(mutag)
+        # error_nx_1 /= len(mutag) * len(mutag) - len(mutag)
+        # error_nx_2 /= len(mutag) * len(mutag) - len(mutag)
+
         errors_cnt.append(error_cnt)
+        errors_bgm_cnt.append(error_bgm_cnt)
+        errors_bgm_leon1.append(error_bgm_leon1)
+        errors_bgm_leon2.append(error_bgm_leon2)
+        errors_nx_0.append(error_nx_0)
+        # errors_nx_1.append(error_nx_1)
+        # errors_nx_2.append(error_nx_2)
     
     plt.plot(heights, errors_cnt, label="cnt", color="orange")
-    plt.plot(heights, errors_bgm, label="bgm", color="blue")
+    plt.plot(heights, errors_bgm_cnt, label="bgm_cnt", color="blue")
+    plt.plot(heights, errors_bgm_leon1, label="bgm_leon1", color="green")
+    plt.plot(heights, errors_bgm_leon2, label="bgm_leon2", color="red")
+    plt.plot(heights, errors_nx_0, label="nx_0", color="purple")
+    # plt.plot(heights, errors_nx_1, label="nx_1", color="brown")
+    # plt.plot(heights, errors_nx_2, label="nx_2", color="pink")
     plt.xlabel("Height")
     plt.ylabel("Avg. Error")
     plt.title("Average of Approximation Error: MUTAG")
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    plt.legend()
+    plt.legend(loc="upper left", bbox_to_anchor=(1, 1))  # Adjust position
+    plt.tight_layout()
     plt.savefig("avg_error_MUTAG.png")
     plt.clf()
     print("MUTAG - avg error: Done")
@@ -338,22 +395,22 @@ if __name__ == "__main__":
     # print("AIDS")
     # print(f"TP: {tp}, FP: {fp}, TN: {tn}, FN: {fn}")
 
-    # # * 3nn classification using matrix
-    # mutag = main.load_graphs("MUTAG")
-    # print("MUTAG - 3nn Klassifikation")
-    # print("--------------------------------")
-    # mutag_matrix = pd.read_csv("MUTAG_Matrix_exact.csv", header=None).values
-    # exact_acc = knn_matrix(mutag, mutag_matrix, test_size=0.2)
-    # print(f"Exact Accuracy: {exact_acc}")
+    # * 3nn classification using matrix
+    mutag = main.load_graphs("MUTAG")
+    print("MUTAG - 3nn Klassifikation")
+    print("--------------------------------")
+    mutag_matrix = pd.read_csv("MUTAG_Matrix_exact.csv", header=None).values
+    exact_acc = knn_matrix(mutag, mutag_matrix, test_size=0.2)
+    print(f"Exact Accuracy: {exact_acc}")
 
-    # mutag_matrix = pd.read_csv("MUTAG_Matrix_cnt_5.csv", header=None).values
-    # cnt_acc = knn_matrix(mutag, mutag_matrix, test_size=0.2)
-    # print(f"CNT Accuracy: {cnt_acc}")
+    mutag_matrix = pd.read_csv("MUTAG_Matrix_cnt_5.csv", header=None).values
+    cnt_acc = knn_matrix(mutag, mutag_matrix, test_size=0.2)
+    print(f"CNT Accuracy: {cnt_acc}")
 
-    # mutag_matrix = pd.read_csv("MUTAG_Matrix_bgm.csv", header=None).values
-    # bgm_acc = knn_matrix(mutag, mutag_matrix, test_size=0.2)
-    # print(f"BGM Accuracy: {bgm_acc}")
-    # print("--------------------------------")
+    mutag_matrix = pd.read_csv("MUTAG_Matrix_bgm.csv", header=None).values
+    bgm_acc = knn_matrix(mutag, mutag_matrix, test_size=0.2)
+    print(f"BGM Accuracy: {bgm_acc}")
+    print("--------------------------------")
 
 
     # # ? Graph-clustering
@@ -390,33 +447,33 @@ if __name__ == "__main__":
     # plt.clf()
     # print("MUTAG - 90 - Clustering: Done")
 
-    # # * spectral clustering
-    # mutag = main.load_graphs("MUTAG")
-    # print("MUTAG - Clustering")
-    # print("--------------------------------")
-    # mutag_matrix = pd.read_csv("MUTAG_Matrix_exact.csv", header=None).values
-    # exact_acc_spectral = spectral_clustering(mutag, mutag_matrix, n_clusters=2)
-    # exact_acc_ac = agglomerative_clustering(mutag, mutag_matrix, n_clusters=2)
-    # exact_acc_k = k_metoid_clustering(mutag, mutag_matrix, n_clusters=2)
+    # * spectral clustering
+    mutag = main.load_graphs("MUTAG")
+    print("MUTAG - Clustering")
+    print("--------------------------------")
+    mutag_matrix = pd.read_csv("MUTAG_Matrix_exact.csv", header=None).values
+    exact_acc_spectral = spectral_clustering(mutag, mutag_matrix, n_clusters=2)
+    exact_acc_ac = agglomerative_clustering(mutag, mutag_matrix, n_clusters=2)
+    exact_acc_k = k_metoid_clustering(mutag, mutag_matrix, n_clusters=2)
 
-    # mutag_matrix = pd.read_csv("MUTAG_Matrix_cnt_5.csv", header=None).values
-    # cnt_acc_spectral = spectral_clustering(mutag, mutag_matrix, n_clusters=2)
-    # cnt_acc_ac = agglomerative_clustering(mutag, mutag_matrix, n_clusters=2)
-    # cnt_acc_k = k_metoid_clustering(mutag, mutag_matrix, n_clusters=2)
+    mutag_matrix = pd.read_csv("MUTAG_Matrix_cnt_5.csv", header=None).values
+    cnt_acc_spectral = spectral_clustering(mutag, mutag_matrix, n_clusters=2)
+    cnt_acc_ac = agglomerative_clustering(mutag, mutag_matrix, n_clusters=2)
+    cnt_acc_k = k_metoid_clustering(mutag, mutag_matrix, n_clusters=2)
 
-    # mutag_matrix = pd.read_csv("MUTAG_Matrix_bgm.csv", header=None).values
-    # bgm_acc_spectral = spectral_clustering(mutag, mutag_matrix, n_clusters=2)
-    # bgm_acc_ac = agglomerative_clustering(mutag, mutag_matrix, n_clusters=2)
-    # bgm_acc_k = k_metoid_clustering(mutag, mutag_matrix, n_clusters=2)
-    # print(f"Exact Sprectral Accuracy: {exact_acc_spectral}")
-    # print(f"CNT Sprectral Accuracy: {cnt_acc_spectral}")
-    # print(f"BGM Sprectral Accuracy: {bgm_acc_spectral}")
-    # print("--------------------------------")
-    # print(f"Exact Agglomerative Accuracy: {exact_acc_ac}")
-    # print(f"CNT Agglomerative Accuracy: {cnt_acc_ac}")
-    # print(f"BGM Agglomerative Accuracy: {bgm_acc_ac}")
-    # print("--------------------------------")
-    # print(f"Exact K-Metoid Accuracy: {exact_acc_k}")
-    # print(f"CNT K-Metoid Accuracy: {cnt_acc_k}")
-    # print(f"BGM K-Metoid Accuracy: {bgm_acc_k}")
-    # print("--------------------------------")
+    mutag_matrix = pd.read_csv("MUTAG_Matrix_bgm.csv", header=None).values
+    bgm_acc_spectral = spectral_clustering(mutag, mutag_matrix, n_clusters=2)
+    bgm_acc_ac = agglomerative_clustering(mutag, mutag_matrix, n_clusters=2)
+    bgm_acc_k = k_metoid_clustering(mutag, mutag_matrix, n_clusters=2)
+    print(f"Exact Sprectral Accuracy: {exact_acc_spectral}")
+    print(f"CNT Sprectral Accuracy: {cnt_acc_spectral}")
+    print(f"BGM Sprectral Accuracy: {bgm_acc_spectral}")
+    print("--------------------------------")
+    print(f"Exact Agglomerative Accuracy: {exact_acc_ac}")
+    print(f"CNT Agglomerative Accuracy: {cnt_acc_ac}")
+    print(f"BGM Agglomerative Accuracy: {bgm_acc_ac}")
+    print("--------------------------------")
+    print(f"Exact K-Metoid Accuracy: {exact_acc_k}")
+    print(f"CNT K-Metoid Accuracy: {cnt_acc_k}")
+    print(f"BGM K-Metoid Accuracy: {bgm_acc_k}")
+    print("--------------------------------")

@@ -467,7 +467,7 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
     unmatched_nodes1 = set(graph1.nodes) - matched_nodes1
     for node in unmatched_nodes1:
         for neighbor in graph1.neighbors(node):
-            if (node, neighbor) not in visited_edges or (neighbor, node) not in visited_edges:
+            if (node, neighbor) not in visited_edges and (neighbor, node) not in visited_edges:
                 visited_edges.add((node, neighbor))
                 visited_edges.add((neighbor, node))
                 edit_path.append(f"delete edge: {node}-{neighbor}")
@@ -484,15 +484,15 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
     for node in unmatched_nodes2:
         for neighbor in graph2.neighbors(node):
                 if neighbor not in mapping_inv: # check if the neighbor is not in the mapping
-                    if (node, neighbor) not in visited_edges or (neighbor, node) not in visited_edges:
+                    if (node, neighbor) not in visited_edges and (neighbor, node) not in visited_edges:
                         visited_edges.add((node, neighbor))
                         visited_edges.add((neighbor, node))
                         edit_path.append(f"insert n_edge: {node}-{neighbor}")
                         #// edit_cost += cost_insert_edge(graph2.edges[node, neighbor]["label"])
                 elif neighbor in mapping_inv: # check if the neighbor is in the mapping
-                    if (node, neighbor) not in visited_edges or (neighbor, node) not in visited_edges:
-                        visited_edges.add((node, neighbor))
-                        visited_edges.add((neighbor, node))
+                    if (node, mapping_inv[neighbor]) not in visited_edges and (mapping_inv[neighbor], node) not in visited_edges:
+                        visited_edges.add((node, mapping_inv[neighbor]))
+                        visited_edges.add((mapping_inv[neighbor], node))
                         edit_path.append(f"insert h_edge: {node}-{mapping_inv[neighbor]}")
                         #// edit_cost += cost_insert_edge(graph2.edges[node, mapping_inv[neighbor]]["label"])
 
@@ -500,31 +500,43 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
     for (u,v) in graph1.edges:
         if u not in mapping or v not in mapping:
             continue
-        if (u,v) in visited_edges or (v,u) in visited_edges:
+        if (u,v) in visited_edges or (v,u) in visited_edges or (mapping[u], mapping[v]) in visited_edges or (mapping[v], mapping[u]) in visited_edges:
             continue
         if (mapping[u], mapping[v]) not in graph2.edges:
             edit_path.append(f"delete edge: {u}-{v}")
             #// edit_cost += cost_delete_edge(graph1.edges[u,v]["label"])
             visited_edges.add((u,v))
+            visited_edges.add((v,u))
+            visited_edges.add((mapping[u], mapping[v]))
+            visited_edges.add((mapping[v], mapping[u]))
         elif graph1.edges[u,v]["label"] != graph2.edges[mapping[u], mapping[v]]["label"]:
             edit_path.append(f"relabel edge: {u}-{v} -> {mapping[u]}-{mapping[v]}")
             #// edit_cost += cost_relabel_edge(graph1.edges[u,v]["label"], graph2.edges[mapping[u], mapping[v]]["label"])
             visited_edges.add((u,v))
+            visited_edges.add((v,u))
+            visited_edges.add((mapping[u], mapping[v]))
+            visited_edges.add((mapping[v], mapping[u]))
 
     # insert edges in graph2 which are not in the matching and relabel edges which are in the matching but have different labels
     for (u,v) in graph2.edges:
         if u not in mapping_inv or v not in mapping_inv:
             continue
-        if (u,v) in visited_edges or (v,u) in visited_edges:
+        if (u,v) in visited_edges or (v,u) in visited_edges or (mapping_inv[u], mapping_inv[v]) in visited_edges or (mapping_inv[v], mapping_inv[u]) in visited_edges:
             continue
         if (mapping_inv[u], mapping_inv[v]) not in graph1.edges:
             edit_path.append(f"insert edge: {mapping_inv[u]}-{mapping_inv[v]}")
             #// edit_cost += cost_insert_edge(graph2.edges[u,v]["label"])
             visited_edges.add((u,v))
+            visited_edges.add((v,u))
+            visited_edges.add((mapping_inv[u], mapping_inv[v]))
+            visited_edges.add((mapping_inv[v], mapping_inv[u]))
         elif graph1.edges[mapping_inv[u], mapping_inv[v]]["label"] != graph2.edges[u,v]["label"]:
             edit_path.append(f"relabel r_edge: {u}-{v} -> {mapping_inv[u]}-{mapping_inv[v]}")
             #// edit_cost += cost_relabel_edge(graph1.edges[mapping_inv[u], mapping_inv[v]]["label"], graph2.edges[u,v]["label"])
             visited_edges.add((u,v))
+            visited_edges.add((v,u))
+            visited_edges.add((mapping_inv[u], mapping_inv[v]))
+            visited_edges.add((mapping_inv[v], mapping_inv[u]))
     
     return edit_path #// , edit_cost
 
@@ -631,6 +643,36 @@ def calculate_cost_matrix(graphs, height=8, k=0):
     print(f"Calculating the cost matrix: {t.time() - basetime}s")
     print("\n")
     return cost_matrix, edit_paths, matchings
+
+def nx_cost_matrix(graphs, n_iter=2):
+
+    basetime = t.time()
+
+    # create the cost matrix, edit paths and matchings
+    graph_ids = list(graphs.keys())
+    cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0)
+
+    # use concurrent.futures to parallelize the calculation of the GED cost matrix
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {}
+        # calculate the GED between all pairs of graphs
+        for i, j in combinations(range(len(graph_ids)), 2):
+            futures[(i, j)] = executor.submit(nx.optimize_graph_edit_distance, graphs[graph_ids[i]], graphs[graph_ids[j]], node_match=node_match, edge_match=edge_match)
+
+        # get the results of the futures and store them in the cost matrix, edit paths and matchings
+        for (i, j), future in futures.items():
+            ged_iter = future.result()
+            approx_ged = 999
+            for idx, ged in enumerate(ged_iter):
+                if idx == n_iter:  
+                    approx_ged = ged
+                    break
+            cost_matrix[i, j] = cost_matrix[j, i] = approx_ged
+
+
+    print(f"Calculating the cost matrix: {t.time() - basetime}s")
+    print("\n")
+    return cost_matrix
 
 
 # ? The following functions are used to calculate the GED based on a standard BGM approach
