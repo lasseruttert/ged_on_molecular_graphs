@@ -113,7 +113,7 @@ def test_knn(graphs, method="cnt", height=5, k_param=0):
 
     return tp, fp, tn, fn, (t.time() - start_time)
 
-def knn_matrix(graphs, ged_matrix, test_size = 0.2):
+def knn_matrix(graphs, ged_matrix, test_size = 0.2, n_neighbors=3):
     labels = []
     for graph in graphs.values():
         labels.append(graph.graph["label"])
@@ -127,7 +127,7 @@ def knn_matrix(graphs, ged_matrix, test_size = 0.2):
     y_train = labels[train_idx]
     y_test = labels[test_idx]
 
-    knn = KNeighborsClassifier(n_neighbors=3, metric="precomputed")
+    knn = KNeighborsClassifier(n_neighbors=n_neighbors, metric="precomputed")
     knn.fit(D_train, y_train)
     y_pred = knn.predict(D_test)
     accuracy = accuracy_score(y_test, y_pred)
