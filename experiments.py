@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # # * MUTAG - Full - CNT
     mutag_full = main.load_graphs("MUTAG")
     # mutag_matrix,_,_ = main.calculate_cost_matrix(mutag_full, height=5)
-    # np.savetxt(f"MUTAG_full_cost_matrix.csv", mutag_matrix, delimiter=",",fmt="%d")
+    # np.savetxt(f"MUTAG_Matrix_cnt_5.csv", mutag_matrix, delimiter=",",fmt="%d")
     # plt.figure(figsize=(10, 8))
     # # sns.heatmap(mutag_matrix, annot=True, fmt="d", cmap="coolwarm", cbar=True)
     # # plt.xlabel('Graphs')
@@ -38,36 +38,36 @@ if __name__ == "__main__":
     # mutag_matrix = main.nx_cost_matrix(mutag_full, 2)
     # np.savetxt(f"MUTAG_Matrix_nx_2.csv", mutag_matrix, delimiter=",",fmt="%d")
     
-    # mutag_matrix, _, _ = main.standard_bgm_matrix(mutag_full)
-    # np.savetxt(f"MUTAG_Matrix_bgm.csv", mutag_matrix, delimiter=",",fmt="%d")
+    mutag_matrix, _, _ = main.standard_bgm_matrix(mutag_full)
+    np.savetxt(f"MUTAG_Matrix_bgm.csv", mutag_matrix, delimiter=",",fmt="%d")
     
-    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=1)
-    # np.savetxt(f"MUTAG_Matrix_cnt_1.csv", mutag_matrix, delimiter=",",fmt="%d")
+    mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=1)
+    np.savetxt(f"MUTAG_Matrix_cnt_1.csv", mutag_matrix, delimiter=",",fmt="%d")
     
-    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=2)
-    # np.savetxt(f"MUTAG_Matrix_cnt_2.csv", mutag_matrix, delimiter=",",fmt="%d")
+    mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=2)
+    np.savetxt(f"MUTAG_Matrix_cnt_2.csv", mutag_matrix, delimiter=",",fmt="%d")
     
-    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=3)
-    # np.savetxt(f"MUTAG_Matrix_cnt_3.csv", mutag_matrix, delimiter=",",fmt="%d")
+    mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=3)
+    np.savetxt(f"MUTAG_Matrix_cnt_3.csv", mutag_matrix, delimiter=",",fmt="%d")
     
-    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=4)
-    # np.savetxt(f"MUTAG_Matrix_cnt_4.csv", mutag_matrix, delimiter=",",fmt="%d")
+    mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=4)
+    np.savetxt(f"MUTAG_Matrix_cnt_4.csv", mutag_matrix, delimiter=",",fmt="%d")
     
-    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=6)
-    # np.savetxt(f"MUTAG_Matrix_cnt_6.csv", mutag_matrix, delimiter=",",fmt="%d")
+    mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=6)
+    np.savetxt(f"MUTAG_Matrix_cnt_6.csv", mutag_matrix, delimiter=",",fmt="%d")
     
-    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=7)
-    # np.savetxt(f"MUTAG_Matrix_cnt_7.csv", mutag_matrix, delimiter=",",fmt="%d")
+    mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=7)
+    np.savetxt(f"MUTAG_Matrix_cnt_7.csv", mutag_matrix, delimiter=",",fmt="%d")
     
-    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=8)
-    # np.savetxt(f"MUTAG_Matrix_cnt_8.csv", mutag_matrix, delimiter=",",fmt="%d")
+    mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=8)
+    np.savetxt(f"MUTAG_Matrix_cnt_8.csv", mutag_matrix, delimiter=",",fmt="%d")
     
-    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=9)
-    # np.savetxt(f"MUTAG_Matrix_cnt_9.csv", mutag_matrix, delimiter=",",fmt="%d")
+    mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=9)
+    np.savetxt(f"MUTAG_Matrix_cnt_9.csv", mutag_matrix, delimiter=",",fmt="%d")
     
-    # mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=10)
-    # np.savetxt(f"MUTAG_Matrix_cnt_10.csv", mutag_matrix, delimiter=",",fmt="%d")
-    # print("MUTAG - Full - CNT: Done")
+    mutag_matrix, _, _ = main.calculate_cost_matrix(mutag_full, height=10)
+    np.savetxt(f"MUTAG_Matrix_cnt_10.csv", mutag_matrix, delimiter=",",fmt="%d")
+    print("MUTAG - Full - CNT: Done")
 
     # # * MUTAG - 20 - CNT
     # mutag_20 = main.load_graphs("MUTAG", 20)
