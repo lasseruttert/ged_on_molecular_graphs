@@ -69,7 +69,8 @@ if __name__ == "__main__":
                 print("\n")
                 print("\n")
 
-    bgm_cost_matrix = main.nx_cost_matrix(graphs, n_iter=0)
+    # bgm_cost_matrix = main.nx_cost_matrix(graphs, n_iter=0)
+    bgm_cost_matrix = main.nx_cost_matrix(graphs, n_iter = 0)
 
     # print(bgm_cost_matrix)
 

@@ -218,10 +218,10 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
 
                 if child1_label != "pad" or child2_label != "pad": # check if at least one of the children is not a dummy node
                     if child1_label != "pad" and child2_label == "pad": # child1 exists, child2 is a dummy node -> insert child1
-                        cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + 1) * pow(base=w, exp=depth)
+                        cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"]) * pow(base=w, exp=depth)
                         #// cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + cost_insert_edge(tree1_padded.edges[root1, child1_ident]["label"])) * (1/(1+depth+1))
                     elif child2_label != "pad" and child1_label == "pad": # child2 exists, child1 is a dummy node -> insert child2
-                        cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + 1) * pow(base=w, exp=depth)
+                        cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"]) * pow(base=w, exp=depth)
                         #// cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + cost_insert_edge(tree2_padded.edges[root2, child2_ident]["label"])) * (1/(1+depth+1))
                     else: # both children are not dummy nodes -> recursive call
                         # check if the edge labels are different and add the cost of relabeling the edge
@@ -613,6 +613,33 @@ def nx_cost_matrix(graphs, n_iter=2):
                     break
             cost_matrix[i, j] = cost_matrix[j, i] = approx_ged
 
+
+    print(f"Calculating the cost matrix: {t.time() - basetime}s")
+    print("\n")
+    return cost_matrix
+
+def cnt_bound_matrix(graphs,cnt_matrix = None, height=5, k=0):
+    if cnt_matrix is None:
+        cnt_matrix = calculate_cost_matrix(graphs, height, k)[0]
+
+    basetime = t.time()
+    graph_ids = list(graphs.keys())
+    cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0)
+
+    # use concurrent.futures to parallelize the calculation of the GED cost matrix
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {}
+        # calculate the GED between all pairs of graphs
+        for i, j in combinations(range(len(graph_ids)), 2):
+            futures[(i, j)] = executor.submit(nx.optimize_graph_edit_distance, graphs[graph_ids[i]], graphs[graph_ids[j]], node_match=node_match, edge_match=edge_match, upper_bound=cnt_matrix[i,j])
+
+        # get the results of the futures and store them in the cost matrix, edit paths and matchings
+        for (i, j), future in futures.items():
+            ged_iter = future.result()
+            for idx, ged in enumerate(ged_iter): 
+                approx_ged = ged
+                break
+            cost_matrix[i, j] = cost_matrix[j, i] = approx_ged
 
     print(f"Calculating the cost matrix: {t.time() - basetime}s")
     print("\n")
