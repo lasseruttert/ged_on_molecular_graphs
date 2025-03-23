@@ -28,7 +28,7 @@ def precompute_geds_parallel(train_graphs, test_graphs, height=8, k_param=0, met
 
     def compute_ged(i, j, test_id, train_id, cache=cache):
         if method == "cnt":
-            _, _, ged, _, _ = main.calculate_GED_bgm(test_graphs[test_id], train_graphs[train_id], nt_dict, cache, height=height, k=k_param)
+            _, _, ged, _, _ = main.calculate_GED_cnt(test_graphs[test_id], train_graphs[train_id], nt_dict, cache, height=height, k=k_param)
         if method == "bgm":
             _, _, ged, _, _ = main.standard_bgm(test_graphs[test_id], train_graphs[train_id])
         return i, j, ged
@@ -74,7 +74,7 @@ def knn_graph_classification(query_graph, train_graphs, method="cnt", height=5, 
     cache = {}
     for train_graph in train_graphs:
         if method == "cnt":
-            _, _, ged, _, _ = main.calculate_GED_bgm(graph1=query_graph, graph2=train_graph, cache=cache, height=height, k=k_param)
+            _, _, ged, _, _ = main.calculate_GED_cnt(graph1=query_graph, graph2=train_graph, cache=cache, height=height, k=k_param)
         if method == "bgm":
             _, _, ged, _, _ = main.standard_bgm(query_graph, train_graph)
         distances.append(ged)

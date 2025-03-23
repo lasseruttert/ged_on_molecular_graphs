@@ -50,7 +50,7 @@ if __name__ == "__main__":
     # for subgraph in subgraphs:
     #     # check if subgraph is connected
     #     if nx.is_connected(subgraph):
-    #         _,_,GED,_,_ = main.calculate_GED_bgm(subgraph, ring)
+    #         _,_,GED,_,_ = main.calculate_GED_cnt(subgraph, ring)
     #         matched_substructures[i] = (GED,subgraph)
     #         i += 1
 
@@ -74,9 +74,9 @@ if __name__ == "__main__":
     main.print_two_graphs(subgraph2,ring)
     main.print_two_graphs(subgraph3,ring)
     
-    _,_,ged1,e1,m1 = main.calculate_GED_bgm(subgraph1, ring)
-    _,_,ged2,e2,m2 = main.calculate_GED_bgm(subgraph2, ring)
-    _,_,ged3,e3,m3 = main.calculate_GED_bgm(subgraph3, ring)
+    _,_,ged1,e1,m1 = main.calculate_GED_cnt(subgraph1, ring)
+    _,_,ged2,e2,m2 = main.calculate_GED_cnt(subgraph2, ring)
+    _,_,ged3,e3,m3 = main.calculate_GED_cnt(subgraph3, ring)
 
     g1 = main.graph_matcher(subgraph1,ring,e1,m1)
     g2 = main.graph_matcher(subgraph2,ring,e2,m2)

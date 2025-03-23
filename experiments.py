@@ -137,7 +137,7 @@ if __name__ == "__main__":
     #         print(f"Run: {i}")
     #         for j in range(100):
     #             basetime = t.time()
-    #             GED_cnt += main.calculate_GED_bgm(mutag_101[i+1], mutag_101[j+1], height=height, cache=cache)[2]
+    #             GED_cnt += main.calculate_GED_cnt(mutag_101[i+1], mutag_101[j+1], height=height, cache=cache)[2]
     #             runtime_cnt += t.time() - basetime
     #     runtimes_cnt.append(runtime_cnt / 10000)
     #     GEDs_cnt.append(GED_cnt / 10000)
@@ -260,7 +260,7 @@ if __name__ == "__main__":
     #         print(f"Run: {i}")
     #         for j in range(100):
     #             basetime = t.time()
-    #             GED_cnt += main.calculate_GED_bgm(ptc_fm[i+1], ptc_fm[j+1], height=height, cache=cache)[2]
+    #             GED_cnt += main.calculate_GED_cnt(ptc_fm[i+1], ptc_fm[j+1], height=height, cache=cache)[2]
     #             runtime_cnt += t.time() - basetime
     #     runtimes_cnt.append(runtime_cnt / 10000)
     #     GEDs_cnt.append(GED_cnt / 10000)
