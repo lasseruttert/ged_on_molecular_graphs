@@ -387,26 +387,6 @@ def create_nt_dict(graphs, height, k):
             nt_dict[(graph_id, node)] = calculate_costs(nt), create_subgraph_dict(nt) # use graph_id and node as key for the dictionary
     return nt_dict
 
-def create_nt_dict_ns(graphs, height, k):
-    """
-    * creates a dictionary of neighborhood trees for each node in a graph
-
-    * param graphs: a dictionary containing networkx Graph objects representing the graphs
-    * param height: the height of the neighborhood trees
-    * param k: the maximum height difference for redundancy elimination
-
-    * return: a dictionary containing the neighborhood trees with their subgraph dictionary for each node in a graph
-
-    * description:
-    * The function creates a dictionary of neighborhood trees for each node in a graph by calling the build_nt for each node
-    """
-    nt_dict = {}
-    for graph_id in graphs:
-        for node in sorted(graphs[graph_id].nodes):
-            nt = build_nt(graphs[graph_id], node, height, k)
-            nt_dict[(graph_id, node)] = nt 
-    return nt_dict
-
 # ? The following functions are used to calculate the cost matrix, edit paths and matchings between the graphs
 
 def derive_edit_path(graph1, graph2, row_ind, col_ind):
