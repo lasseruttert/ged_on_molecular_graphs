@@ -5,6 +5,7 @@ import seaborn as sns
 import graph_classification as gc
 from bgm import graph_edit_distance_bipartite
 import networkx as nx
+import pandas as pd
 
 # Assuming cost_matrix is your matrix
 def plot_cost_matrix(cost_matrix, title="Cost Matrix"):
@@ -45,6 +46,18 @@ if __name__ == "__main__":
 
     n = 40
 
+    matrix_cnt_bound_1 = pd.read_csv(f"MUTAG_Matrix_cnt_1_bound.csv", header=None).values
+    matrix_cnt_bound_2 = pd.read_csv(f"MUTAG_Matrix_cnt_2_bound.csv", header=None).values
+    matrix_cnt_bound_3 = pd.read_csv(f"MUTAG_Matrix_cnt_3_bound.csv", header=None).values
+    matrix_cnt_bound_4 = pd.read_csv(f"MUTAG_Matrix_cnt_4_bound.csv", header=None).values
+    matrix_cnt_bound_5 = pd.read_csv(f"MUTAG_Matrix_cnt_5_bound.csv", header=None).values
+
+    print(matrix_cnt_bound_1.mean())
+    print(matrix_cnt_bound_2.mean())
+    print(matrix_cnt_bound_3.mean())
+    print(matrix_cnt_bound_4.mean())
+    print(matrix_cnt_bound_5.mean())
+
     graphs = main.load_graphs("MUTAG", n)
 
     cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix(graphs, 5, 0)
@@ -69,8 +82,8 @@ if __name__ == "__main__":
                 print("\n")
                 print("\n")
 
-    # bgm_cost_matrix = main.nx_cost_matrix(graphs, n_iter=0)
-    bgm_cost_matrix = main.nx_cost_matrix(graphs, n_iter = 0)
+    bgm_cost_matrix = main.nx_cost_matrix(graphs, n_iter=0)
+    # bgm_cost_matrix = main.cnt_bound_matrix(graphs, cnt_matrix=cost_matrix)
 
     # print(bgm_cost_matrix)
 

@@ -601,7 +601,7 @@ def nx_cost_matrix(graphs, n_iter=2):
         futures = {}
         # calculate the GED between all pairs of graphs
         for i, j in combinations(range(len(graph_ids)), 2):
-            futures[(i, j)] = executor.submit(nx.optimize_graph_edit_distance, graphs[graph_ids[i]], graphs[graph_ids[j]], node_match=node_match, edge_match=edge_match)
+            futures[(i, j)] = executor.submit(nx.optimize_graph_edit_distance, graphs[graph_ids[i]], graphs[graph_ids[j]], node_match=node_match, edge_match=edge_match, node_subst_cost=node_subst_cost, edge_subst_cost=edge_subst_cost)
 
         # get the results of the futures and store them in the cost matrix, edit paths and matchings
         for (i, j), future in futures.items():
@@ -626,20 +626,12 @@ def cnt_bound_matrix(graphs,cnt_matrix = None, height=5, k=0):
     graph_ids = list(graphs.keys())
     cost_matrix = np.full((len(graph_ids), len(graph_ids)), 0)
 
-    # use concurrent.futures to parallelize the calculation of the GED cost matrix
-    with concurrent.futures.ThreadPoolExecutor() as executor:
-        futures = {}
-        # calculate the GED between all pairs of graphs
-        for i, j in combinations(range(len(graph_ids)), 2):
-            futures[(i, j)] = executor.submit(nx.optimize_graph_edit_distance, graphs[graph_ids[i]], graphs[graph_ids[j]], node_match=node_match, edge_match=edge_match, upper_bound=cnt_matrix[i,j])
-
-        # get the results of the futures and store them in the cost matrix, edit paths and matchings
-        for (i, j), future in futures.items():
-            ged_iter = future.result()
-            for idx, ged in enumerate(ged_iter): 
-                approx_ged = ged
-                break
-            cost_matrix[i, j] = cost_matrix[j, i] = approx_ged
+    for i, j in combinations(range(len(graph_ids)), 2):
+        print(f"Height: {height}, Graphs: {i}, {j}")
+        approx_ged = nx.graph_edit_distance(graphs[graph_ids[i]], graphs[graph_ids[j]], node_match=node_match, edge_match=edge_match, upper_bound=cnt_matrix[i,j], timeout=0.1)
+        if approx_ged is None:
+            approx_ged = cnt_matrix[i,j]
+        cost_matrix[i, j] = cost_matrix[j, i] = approx_ged
 
     print(f"Calculating the cost matrix: {t.time() - basetime}s")
     print("\n")
@@ -847,6 +839,36 @@ def edge_match(e1, e2):
     * return: True if the edges are matching, False otherwise
     """
     return e1['label'] == e2['label']
+
+nx.optimize_graph_edit_distance
+
+def node_subst_cost(u, v):
+    """
+    * calculates the substitution cost of two nodes based on their labels
+
+    * param u: a dictionary representing the first node
+    * param v: a dictionary representing the second node
+
+    * return: the substitution cost of the two nodes
+    """
+    if u['label'] == v['label']:
+        return 0
+    else:
+        return 1  # cost for substitution
+    
+def edge_subst_cost(e1, e2):
+    """
+    * calculates the substitution cost of two edges based on their labels
+
+    * param e1: a dictionary representing the first edge
+    * param e2: a dictionary representing the second edge
+
+    * return: the substitution cost of the two edges
+    """
+    if e1['label'] == e2['label']:
+        return 0
+    else:
+        return 1  # cost for substitution
 
 
 def print_two_graphs(graph1, graph2, layout='spring'):
