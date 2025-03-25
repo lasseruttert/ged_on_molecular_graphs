@@ -639,7 +639,7 @@ def calculate_cost_matrix(graphs, height=8, k=0):
     matchings = {}
 
     for i, j in combinations(range(len(graph_ids)), 2):
-        row_ind, col_ind, min_GED, edit_path, matching = calculate_GED_cnt_square(graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
+        row_ind, col_ind, min_GED, edit_path, matching = calculate_GED_cnt(graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
         cost_matrix[i, j] = cost_matrix[j, i] = min_GED
         edit_paths[(i, j)] = edit_paths[(j, i)] = edit_path
         matchings[(i, j)] = matchings[(j, i)] = matching
