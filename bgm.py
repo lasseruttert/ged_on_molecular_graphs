@@ -7,6 +7,7 @@ import itertools
 import time as t
 from collections import defaultdict
 import os
+from main import sdted, build_nt, create_subgraph_dict, calculate_costs
 
 def get_free_node_id(graph):
     existing_ids = set(graph.nodes) 
@@ -80,11 +81,18 @@ def compute_cost_matrix(graph1, graph2):
     n1, n2 = len(graph1.nodes), len(graph2.nodes)
     size = n1 + n2
     cost_matrix = np.full((size, size), fill_value=10000)  
+    cache = {}
 
     #Knotensubstitutionen
     for i, u in enumerate(graph1.nodes):
         for j, v in enumerate(graph2.nodes):
-            cost_matrix[i, j] = node_edit_cost(graph1.nodes[u]["label"], graph2.nodes[v]["label"])
+            nt1 = build_nt(graph1, u, 5, 0)
+            nt2 = build_nt(graph2, v, 5, 0)
+            nt1 = calculate_costs(nt1)
+            nt2 = calculate_costs(nt2)
+            nt1_subgraphs = create_subgraph_dict(nt1)
+            nt2_subgraphs = create_subgraph_dict(nt2)
+            cost_matrix[i, j] = sdted(nt1, nt2, nt1_subgraphs, nt2_subgraphs, cache)
 
     #Löschoperationen
     for i in range(n2, size):

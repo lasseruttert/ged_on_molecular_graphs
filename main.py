@@ -177,7 +177,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         # check if the calculation is already in the cache, if so return the result
         key = (tree1.graph["encoding"], tree2.graph["encoding"])
         if key in cache:
-            return cache[key] #* pow(base=w, exp=depth)
+            return cache[key] * pow(w, depth)
 
         # n is the maximum number of children of the roots of the two trees
         children1 = sorted(tree1.neighbors(list(tree1.nodes)[0]))
@@ -218,30 +218,26 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
 
                 if child1_label != "pad" or child2_label != "pad": # check if at least one of the children is not a dummy node
                     if child1_label != "pad" and child2_label == "pad": # child1 exists, child2 is a dummy node -> insert child1
-                        cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"]) * pow(base=w, exp=depth)
+                        cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"]) #* pow(w, depth)
                         #// cost_matrix[i][j] = (tree1_padded.nodes[child1_ident]["cost"] + cost_insert_edge(tree1_padded.edges[root1, child1_ident]["label"])) * (1/(1+depth+1))
                     elif child2_label != "pad" and child1_label == "pad": # child2 exists, child1 is a dummy node -> insert child2
-                        cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"]) * pow(base=w, exp=depth)
+                        cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"]) #* pow(w, depth)
                         #// cost_matrix[i][j] = (tree2_padded.nodes[child2_ident]["cost"] + cost_insert_edge(tree2_padded.edges[root2, child2_ident]["label"])) * (1/(1+depth+1))
                     else: # both children are not dummy nodes -> recursive call
                         # check if the edge labels are different and add the cost of relabeling the edge
                         temp_cost = 0
                         if tree1_padded.edges[root1, child1_ident]["label"] != tree2_padded.edges[root2, child2_ident]["label"]:
-                            temp_cost = 1 * pow(base=w, exp=depth)
+                            temp_cost = 1 #* pow(w, depth)
                         #// temp_cost = cost_relabel_edge(tree1_padded.edges[root1, child1_ident]["label"], tree2_padded.edges[root2, child2_ident]["label"]) if tree1_padded.edges[root1, child1_ident]["label"] != tree2_padded.edges[root2, child2_ident]["label"] else 0
-                        # check cache for recursive call
-                        if (subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"]) in cache:
-                            recursive_cost = cache[(subgraph_dict1[child1_ident].graph["encoding"], subgraph_dict2[child2_ident].graph["encoding"])] 
-                        else:
                             # recursive call on the subgraphs induced by the children of the roots
-                            recursive_cost = recursive_sdted(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident], depth + 1)
+                        recursive_cost = recursive_sdted(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident], depth + 1)
                         # calculate the cost of the recursive call and add the cost of the edge relabeling 
                         cost_matrix[i][j] = (recursive_cost + temp_cost) 
 
         # calculate the cost of the roots
         cost_root = 0 
         if tree1_padded.nodes[root1]["label"] != tree2_padded.nodes[root2]["label"]: # check if the root labels are different
-            cost_root = 1 * pow(base=w, exp=depth)
+            cost_root = 1 #* pow(w, depth)
             #// cost_root = cost_relabel_node(tree1_padded.nodes[root1]["label"], tree2_padded.nodes[root2]["label"])
         
         # use the Hungarian Algorithm to find the optimal matching of the children
@@ -256,7 +252,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         # add the result to the cache
         cache[key] = result
 
-        return result
+        return result * pow(w, depth)
 
     # start the recursive calculation of the SDTED between the two trees 
     result = recursive_sdted(treee1, treee2, 0)
@@ -444,10 +440,10 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
     unmatched_nodes1 = set(graph1.nodes) - matched_nodes1
     for node in unmatched_nodes1:
         for neighbor in graph1.neighbors(node):
-            if normalize_edge((node, neighbor)) not in visited_edges:
+            if (normalize_edge((node, neighbor)), graph1.graph["id"]) not in visited_edges:
                 edit_path.append(f"delete edge: {node}-{neighbor}")
                 #// edit_cost += cost_delete_edge(graph1.edges[node, neighbor]["label"])
-                visited_edges.add(normalize_edge((node, neighbor)))
+                visited_edges.add((normalize_edge((node, neighbor)), graph1.graph["id"]))
         edit_path.append(f"delete node: {node}")
         #// edit_cost += cost_delete_node(graph1.nodes[node]["label"])
     
@@ -460,44 +456,44 @@ def derive_edit_path(graph1, graph2, row_ind, col_ind):
     for node in unmatched_nodes2:
         for neighbor in graph2.neighbors(node):
                 if neighbor not in mapping_inv: # check if the neighbor is not in the mapping
-                    if normalize_edge((node, neighbor)) not in visited_edges:
+                    if (normalize_edge((node, neighbor)), graph2.graph["id"]) not in visited_edges:
                         edit_path.append(f"insert n_edge: {node}-{neighbor}")
                         #// edit_cost += cost_insert_edge(graph2.edges[node, neighbor]["label"])
-                        visited_edges.add(normalize_edge((node, neighbor)))
+                        visited_edges.add((normalize_edge((node, neighbor)), graph2.graph["id"]))
                 elif neighbor in mapping_inv: # check if the neighbor is in the mapping
-                    if normalize_edge((node, mapping_inv[neighbor])) not in visited_edges:
+                    if (normalize_edge((node, mapping_inv[neighbor])), graph2.graph["id"]) not in visited_edges:
                         edit_path.append(f"insert h_edge: {node}-{mapping_inv[neighbor]}")
                         #// edit_cost += cost_insert_edge(graph2.edges[node, mapping_inv[neighbor]]["label"])
-                        visited_edges.add(normalize_edge((node, mapping_inv[neighbor])))
+                        visited_edges.add((normalize_edge((node, mapping_inv[neighbor])), graph2.graph["id"]))
 
     # delete edges in graph1 which are not in the matching and relabel edges which are in the matching but have different labels
     for (u,v) in graph1.edges:
         if u not in mapping or v not in mapping:
             continue
-        if normalize_edge((u,v)) in visited_edges or normalize_edge((mapping[u], mapping[v])) in visited_edges:
+        if (normalize_edge((u,v)), graph1.graph["id"]) in visited_edges or (normalize_edge((mapping[u], mapping[v])), graph2.graph["id"]) in visited_edges:
             continue
         if (mapping[u], mapping[v]) not in graph2.edges:
             edit_path.append(f"delete edge: {u}-{v}")
             #// edit_cost += cost_delete_edge(graph1.edges[u,v]["label"])
-            visited_edges.add(normalize_edge((u,v)))
-            visited_edges.add(normalize_edge((mapping[u], mapping[v])))
+            visited_edges.add((normalize_edge((u,v)), graph1.graph["id"]))
+            visited_edges.add((normalize_edge((mapping[u], mapping[v])), graph2.graph["id"]))
         elif graph1.edges[u,v]["label"] != graph2.edges[mapping[u], mapping[v]]["label"]:
             edit_path.append(f"relabel edge: {u}-{v} -> {mapping[u]}-{mapping[v]}")
             #// edit_cost += cost_relabel_edge(graph1.edges[u,v]["label"], graph2.edges[mapping[u], mapping[v]]["label"])
-            visited_edges.add(normalize_edge((u,v)))
-            visited_edges.add(normalize_edge((mapping[u], mapping[v])))
+            visited_edges.add((normalize_edge((u,v)), graph1.graph["id"]))
+            visited_edges.add((normalize_edge((mapping[u], mapping[v])), graph2.graph["id"]))
 
     # insert edges in graph2 which are not in the matching and relabel edges which are in the matching but have different labels
     for (u,v) in graph2.edges:
         if u not in mapping_inv or v not in mapping_inv:
             continue
-        if normalize_edge((u,v)) in visited_edges or normalize_edge((mapping_inv[u], mapping_inv[v])) in visited_edges:
+        if (normalize_edge((u,v)), graph2.graph["id"]) in visited_edges or (normalize_edge((mapping_inv[u], mapping_inv[v])), graph1.graph["id"]) in visited_edges:
             continue
         if (mapping_inv[u], mapping_inv[v]) not in graph1.edges:
             edit_path.append(f"insert edge: {mapping_inv[u]}-{mapping_inv[v]}")
             #// edit_cost += cost_insert_edge(graph2.edges[u,v]["label"])
-            visited_edges.add(normalize_edge((u,v)))
-            visited_edges.add(normalize_edge((mapping_inv[u], mapping_inv[v])))
+            visited_edges.add((normalize_edge((u,v)), graph2.graph["id"]))
+            visited_edges.add((normalize_edge((mapping_inv[u], mapping_inv[v])), graph1.graph["id"]))
     
     return edit_path #// , edit_cost
 
@@ -550,6 +546,70 @@ def calculate_GED_cnt(graph1, graph2, nt_dict = None, cache = {}, height=8, k=0)
 
     return row_ind, col_ind, min_GED, edit_path, matching
 
+def calculate_GED_cnt_square(graph1, graph2, nt_dict = None, cache = {}, height=8, k=0):
+    """
+    * calculates the Graph Edit Distance (GED) between two graphs using the Hungarian Algorithm based on the SDTED as the cost function
+
+    * param graph1: a networkx Graph object representing the first graph
+    * param graph2: a networkx Graph object representing the second graph
+    * param nt_dict: a dictionary containing the neighborhood trees with their subgraph dictionary for each node in a graph
+    * param cache: a dictionary containing the results of the SDTED calculations
+
+    * return: the row indices, column indices, the minimum GED, the edit path and the matching between the two graphs
+
+    * description:
+    * The function calculates the Graph Edit Distance (GED) between two graphs using the Hungarian Algorithm based on the SDTED as the cost function
+    * The function creates a cost matrix based on the SDTED between the neighborhood trees of the nodes of the two graphs
+    * The SDTED is used as the cost function for the Hungarian Algorithm
+    * The function uses the Hungarian Algorithm to find the optimal matching of the nodes
+    * The function derives the edit path between the two graphs based on the Hungarian Algorithm matching and calculates the minimum GED
+    """
+    if nt_dict is None:
+        nt_dict = create_nt_dict({graph1.graph["id"]: graph1, graph2.graph["id"]: graph2}, height, k)
+    
+    n1, n2 = len(graph1.nodes), len(graph2.nodes)
+    size = n1 + n2
+    cost_matrix = np.full((size, size), 10000)  # initialize the cost matrix with infinity
+
+    nodes1 = list(graph1.nodes)
+    nodes2 = list(graph2.nodes)
+
+    for i, node1 in enumerate(nodes1):
+        for j, node2 in enumerate(nodes2):
+            nt1 = nt_dict[(graph1.graph["id"], node1)][0]
+            nt2 = nt_dict[(graph2.graph["id"], node2)][0]
+            nt1_subgraph = nt_dict[(graph1.graph["id"], node1)][1]
+            nt2_subgraph = nt_dict[(graph2.graph["id"], node2)][1]
+
+            # calculate the SDTED between the neighborhood trees of the nodes
+            current_result = sdted(nt1, nt2, nt1_subgraph, nt2_subgraph, cache)
+            cost_matrix[i, j] = current_result
+
+    for i in range(n2, size):
+        node = nodes1[i-n2]
+        nt = nt_dict[(graph1.graph["id"], node)][0]
+        cost_matrix[i-n2, i] = len(nt.nodes) + len(nt.edges) - 1  
+
+    for j in range(n1, size):
+        node = nodes2[j-n1]
+        nt = nt_dict[(graph2.graph["id"], node)][0]
+        cost_matrix[j, j-n1] = len(nt.nodes) + len(nt.edges) - 1
+
+    for i in range(n2, size):
+        for j in range(n1, size):
+            cost_matrix[j, i] = 0
+
+
+    # calculate the Hungarian Algorithm matching
+    row_ind, col_ind = linear_sum_assignment(cost_matrix)
+    # get a list of matched nodes, only top n1 and top n2 are considered
+    matching = [(nodes1[i], nodes2[j]) for i, j in zip(row_ind[:n1], col_ind[:n2]) if i < n1 and j < n2]
+    # calculate the edit path between the two graphs and the minimum GED
+    edit_path = derive_edit_path(graph1, graph2, row_ind, col_ind)
+    min_GED = len(edit_path)
+
+    return row_ind, col_ind, min_GED, edit_path, matching
+
 
 def calculate_cost_matrix(graphs, height=8, k=0):
     """
@@ -579,7 +639,7 @@ def calculate_cost_matrix(graphs, height=8, k=0):
     matchings = {}
 
     for i, j in combinations(range(len(graph_ids)), 2):
-        row_ind, col_ind, min_GED, edit_path, matching = calculate_GED_cnt(graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
+        row_ind, col_ind, min_GED, edit_path, matching = calculate_GED_cnt_square(graphs[graph_ids[i]], graphs[graph_ids[j]], nt_dict, cache)
         cost_matrix[i, j] = cost_matrix[j, i] = min_GED
         edit_paths[(i, j)] = edit_paths[(j, i)] = edit_path
         matchings[(i, j)] = matchings[(j, i)] = matching
@@ -840,7 +900,6 @@ def edge_match(e1, e2):
     """
     return e1['label'] == e2['label']
 
-nx.optimize_graph_edit_distance
 
 def node_subst_cost(u, v):
     """
@@ -940,23 +999,23 @@ def load_graphs(dataset, n = None):
 
 
     # get the node to graph mapping
-    node_to_graph = pd.read_csv(f"{path}\{dataset_name}_graph_indicator.txt", header=None)
+    node_to_graph = pd.read_csv(f"{path}/{dataset_name}_graph_indicator.txt", header=None)
     node_to_graph.columns = ["graph_id"]
 
 
     # get the graph labels
-    graph_labels = pd.read_csv(f"{path}\{dataset_name}_graph_labels.txt", header=None)
+    graph_labels = pd.read_csv(f"{path}/{dataset_name}_graph_labels.txt", header=None)
     graph_labels.columns = ["label"]
 
 
     # get the node labels
     if os.path.exists(f"{path}\{dataset_name}_node_labels.txt"):
-        node_labels = pd.read_csv(f"{path}\{dataset_name}_node_labels.txt", header=None)
+        node_labels = pd.read_csv(f"{path}/{dataset_name}_node_labels.txt", header=None)
         node_labels.columns = ["label"]
 
     # get the edge labels
     if os.path.exists(f"{path}\{dataset_name}_edge_labels.txt"):
-        edge_labels = pd.read_csv(f"{path}\{dataset_name}_edge_labels.txt", header=None)
+        edge_labels = pd.read_csv(f"{path}/{dataset_name}_edge_labels.txt", header=None)
         edge_labels.columns = ["label"]
 
     # create a dictionary of graphs
@@ -989,14 +1048,99 @@ def load_graphs(dataset, n = None):
                 source, target = row["source"], row["target"]
                 edge_label = edge_labels.loc[edges[(edges["source"] == source) & (edges["target"] == target)].index[0], "label"]
                 graphs[graph_id].edges[source, target]["label"] = edge_label
-                graphs[graph_id].edges[target, source]["label"] = edge_label  # Ungerichtete Kante (symmetrisch)
         else:
             for _, row in subgraph_edges.iterrows():
                 source, target = row["source"], row["target"]
                 graphs[graph_id].edges[source, target]["label"] = "dummy"
-                graphs[graph_id].edges[target, source]["label"] = "dummy"
         i += 1
     return graphs
+
+def load_graphss(dataset, n=None):
+    # * Knoten sind 1-indexiert, Kanten 0-indexiert
+    # Pfad zum Datensatz
+    current_dir = os.path.dirname(__file__)
+    dataset_name = str(dataset)
+    path = os.path.join(current_dir, "data", dataset_name)
+    
+    # Kanten aus der Adjazenzmatrix laden
+    edges = pd.read_csv(f"{path}/{dataset_name}_A.txt", header=None, sep=",")
+    edges.columns = ["source", "target"]
+    
+    # Knoten-zu-Graph-Zuordnung laden
+    node_to_graph = pd.read_csv(f"{path}/{dataset_name}_graph_indicator.txt", header=None)
+    node_to_graph.columns = ["graph_id"]
+    
+    # Graph-Labels laden
+    graph_labels = pd.read_csv(f"{path}/{dataset_name}_graph_labels.txt", header=None)
+    graph_labels.columns = ["label"]
+    
+    # Knoten-Labels laden, falls vorhanden
+    if os.path.exists(f"{path}/{dataset_name}_node_labels.txt"):
+        node_labels = pd.read_csv(f"{path}/{dataset_name}_node_labels.txt", header=None)
+        node_labels.columns = ["label"]
+    
+    # Kanten-Labels laden, falls vorhanden
+    if os.path.exists(f"{path}/{dataset_name}_edge_labels.txt"):
+        edge_labels = pd.read_csv(f"{path}/{dataset_name}_edge_labels.txt", header=None)
+        edge_labels.columns = ["label"]
+    
+    graphs = {}
+    count = 0
+    # Iteriere über alle eindeutigen Graph-IDs
+    for graph_id in node_to_graph["graph_id"].unique():
+        if n is not None and count == n:
+            break
+        
+        # Bestimme die Knoten, die zum aktuellen Graphen gehören (Original-Knoten-ID aus Datei)
+        original_nodes = node_to_graph[node_to_graph["graph_id"] == graph_id].index + 1
+        
+        # Erstelle ein Mapping von alten (globalen) Knoten-IDs zu neuen, lokal fortlaufenden IDs (0-indexiert)
+        mapping = {old: new for new, old in enumerate(original_nodes, start=1)}
+        
+        # Filtere die Kanten, die zu diesem Graphen gehören, und wende das Mapping an
+        subgraph_edges = edges[edges["source"].isin(original_nodes) & edges["target"].isin(original_nodes)].copy()
+        subgraph_edges["source"] = subgraph_edges["source"].map(mapping)
+        subgraph_edges["target"] = subgraph_edges["target"].map(mapping)
+        
+        # Erstelle den Graphen aus der gefilterten Kantenliste
+        G = nx.from_pandas_edgelist(subgraph_edges, source="source", target="target")
+        # Füge alle Knoten hinzu (auch isolierte Knoten)
+        G.add_nodes_from(mapping.values())
+        
+        # Weise dem Graphen seine Label und ID zu
+        G.graph["label"] = graph_labels.loc[graph_id - 1, "label"]
+        G.graph["id"] = graph_id
+        
+        # Knoten-Labels zuordnen (oder "dummy", falls nicht vorhanden)
+        if "node_labels" in locals():
+            for old_node in original_nodes:
+                new_node = mapping[old_node]
+                G.nodes[new_node]["label"] = node_labels.loc[old_node - 1, "label"]
+        else:
+            for new_node in mapping.values():
+                G.nodes[new_node]["label"] = "dummy"
+        
+        # Kanten-Labels zuordnen (oder "dummy", falls nicht vorhanden)
+        if "edge_labels" in locals():
+            # Um den Bezug zur Originalkante herzustellen, invertieren wir das Mapping
+            inv_mapping = {v: k for k, v in mapping.items()}
+            for i, row in subgraph_edges.iterrows():
+                source_new, target_new = row["source"], row["target"]
+                # Ermittle die alten Knoten-IDs
+                old_source = inv_mapping[source_new]
+                old_target = inv_mapping[target_new]
+                # Finde den Index der Originalkante
+                edge_index = edges[(edges["source"] == old_source) & (edges["target"] == old_target)].index[0]
+                G.edges[source_new, target_new]["label"] = edge_labels.loc[edge_index, "label"]
+        else:
+            for u, v in G.edges():
+                G.edges[u, v]["label"] = "dummy"
+        
+        graphs[graph_id] = G
+        count += 1
+
+    return graphs
+
 
 import seaborn as sns
 
@@ -1007,3 +1151,4 @@ def plot_cost_matrix(cost_matrix, title="Cost Matrix"):
     plt.ylabel('Graph 2 Nodes')
     plt.title(title)
     plt.show()
+    return None
