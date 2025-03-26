@@ -236,125 +236,127 @@ if __name__ == "__main__":
     # plt.clf()
     # print("MUTAG - avg GED: Done")
 
-    # # * PTC_FM - single GED
-    # cache = {}
-    # ptc_fm = main.load_graphs("PTC_FM",101)
-    # runtimes_cnt = []
-    # runtimes_bgm = []
-    # GEDs_cnt = []
-    # GEDs_bgm = []
+    # * PTC_FM - single GED
+    cache = {}
+    ptc_fm = main.load_graphs("PTC_FM",101)
+    runtimes_cnt = []
+    runtimes_bgm = []
+    GEDs_cnt = []
+    GEDs_bgm = []
 
-    # runtime_bgm = 0
-    # GED_bgm = 0
-    # for i in range(100):
-    #     for j in range(100):
-    #         basetime = t.time()
-    #         GED_bgm += main.standard_bgm(ptc_fm[i+1], ptc_fm[j+1])[2]
-    #         runtime_bgm += t.time() - basetime
-    # for height in heights:
-    #     runtimes_bgm.append(runtime_bgm / 10000)
-    #     GEDs_bgm.append(GED_bgm / 10000)
-
-    # for height in heights:
-    #     print(f"Height: {height}")
-    #     runtime_cnt = 0
-    #     GED_cnt = 0
-    #     for i in range(100):
-    #         print(f"Run: {i}")
-    #         for j in range(100):
-    #             basetime = t.time()
-    #             GED_cnt += main.calculate_GED_cnt(ptc_fm[i+1], ptc_fm[j+1], height=height, cache=cache)[2]
-    #             runtime_cnt += t.time() - basetime
-    #     runtimes_cnt.append(runtime_cnt / 10000)
-    #     GEDs_cnt.append(GED_cnt / 10000)
-
-    # plt.plot(heights, runtimes_cnt, label="cnt", color="orange")
-    # plt.plot(heights, runtimes_bgm, label="bgm", color="blue")
-    # plt.xlabel("Height")
-    # plt.ylabel("Runtime")
-    # plt.title("Runtime of GED calculation: PTC_FM")
-    # plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    # plt.legend()
-    # plt.savefig("runtime_ged_PTC_FM.png")
-    # plt.clf()
-    # print("PTC_FM - single GED: Done")
-
-    # plt.plot(heights, GEDs_cnt, label="cnt", color="orange")
-    # plt.plot(heights, GEDs_bgm, label="bgm", color="blue")
-    # plt.xlabel("Height")
-    # plt.ylabel("Avg. GED")
-    # plt.title("Average of GED calculation: PTC_FM")
-    # plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    # plt.legend()
-    # plt.savefig("avg_GED_PTC_FM.png")
-    # plt.clf()
-    # print("PTC_FM - avg GED: Done")
-
-    # * Mutag - with baseline, using csv
-    mutag = main.load_graphs("MUTAG")
-    matrix_exact = pd.read_csv("mutag_csv/MUTAG_Matrix_exact.csv", header=None).values
-    matrix_bgm_cnt = pd.read_csv("mutag_csv/MUTAG_Matrix_bgm.csv", header=None).values
-    matrix_bgm_leon1 = pd.read_csv("mutag_csv/MUTAG_Matrix_bgm_leon1.csv", header=None).values
-    matrix_bgm_leon2 = pd.read_csv("mutag_csv/MUTAG_Matrix_bgm_leon2.csv", header=None).values
-    matrix_nx_0 = pd.read_csv("mutag_csv/MUTAG_Matrix_nx_0.csv", header=None).values
-    
-    errors_cnt = []
-    errors_cnt_bound = []
-    errors_bgm_cnt = []
-    errors_bgm_leon1 = []
-    errors_bgm_leon2 = []
-    errors_nx_0 = []
+    runtime_bgm = 0
+    GED_bgm = 0
+    for i in range(100):
+        for j in range(100):
+            basetime = t.time()
+            GED_bgm += main.standard_bgm(ptc_fm[i+1], ptc_fm[j+1])[2]
+            runtime_bgm += t.time() - basetime
+    for height in heights:
+        runtimes_bgm.append(runtime_bgm / 10000)
+        GEDs_bgm.append(GED_bgm / 10000)
 
     for height in heights:
-        matrix_cnt = pd.read_csv(f"mutag_csv/MUTAG_Matrix_cnt_{height}.csv", header=None).values
-        matrix_cnt_bound = pd.read_csv(f"mutag_csv/MUTAG_Matrix_cnt_{height}_bound.csv", header=None).values
-        error_cnt = 0
-        error_cnt_bound = 0
-        error_bgm_cnt = 0
-        error_bgm_leon1 = 0
-        error_bgm_leon2 = 0
-        error_nx_0 = 0
-        for i in range(len(mutag)):
-            for j in range(len(mutag)):
-                if i == j:
-                    continue
-                error_cnt += abs(matrix_exact[i][j] - matrix_cnt[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_cnt[i][j]
-                error_cnt_bound += abs(matrix_exact[i][j] - matrix_cnt_bound[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_cnt_bound[i][j]
-                error_bgm_cnt += abs(matrix_exact[i][j] - matrix_bgm_cnt[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm_cnt[i][j]
-                error_bgm_leon1 += abs(matrix_exact[i][j] - matrix_bgm_leon1[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm_leon1[i][j]
-                error_bgm_leon2 += abs(matrix_exact[i][j] - matrix_bgm_leon2[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm_leon2[i][j]
-                error_nx_0 += abs(matrix_exact[i][j] - matrix_nx_0[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_nx_0[i][j]
-        
-        error_cnt /= len(mutag) * len(mutag) - len(mutag)
-        error_cnt_bound /= len(mutag) * len(mutag) - len(mutag)
-        error_bgm_cnt /= len(mutag) * len(mutag) - len(mutag)
-        error_bgm_leon1 /= len(mutag) * len(mutag) - len(mutag)
-        error_bgm_leon2 /= len(mutag) * len(mutag) - len(mutag)
-        error_nx_0 /= len(mutag) * len(mutag) - len(mutag)
+        print(f"Height: {height}")
+        runtime_cnt = 0
+        GED_cnt = 0
+        for i in range(100):
+            print(f"Run: {i}")
+            for j in range(100):
+                basetime = t.time()
+                GED_cnt += main.calculate_GED_cnt(ptc_fm[i+1], ptc_fm[j+1], height=height, cache=cache)[2]
+                runtime_cnt += t.time() - basetime
+        runtimes_cnt.append(runtime_cnt / 10000)
+        GEDs_cnt.append(GED_cnt / 10000)
 
-        errors_cnt.append(error_cnt)
-        errors_cnt_bound.append(error_cnt_bound)
-        errors_bgm_cnt.append(error_bgm_cnt)
-        errors_bgm_leon1.append(error_bgm_leon1)
-        errors_bgm_leon2.append(error_bgm_leon2)
-        errors_nx_0.append(error_nx_0)
-
-    plt.plot(heights, errors_cnt, label="CNT", color="orange")
-    plt.plot(heights, errors_cnt_bound, label="CNT - as Bound", color="pink")
-    plt.plot(heights, errors_bgm_cnt, label="BGM - CNT Framework", color="blue")
-    plt.plot(heights, errors_bgm_leon1, label="BGM - Leon", color="green")
-    # plt.plot(heights, errors_bgm_leon2, label="BGM", color="red")
-    plt.plot(heights, errors_nx_0, label="NX - Optimize", color="purple")
-
+    plt.plot(heights, runtimes_cnt, label="cnt", color="orange")
+    plt.plot(heights, runtimes_bgm, label="bgm", color="blue")
     plt.xlabel("Height")
-    plt.ylabel("Avg. Error")
-    plt.title("Average Approximation Error: MUTAG")
+    plt.ylabel("Runtime")
+    plt.title("Runtime of GED calculation: PTC_FM")
     plt.grid(True, which='both', linestyle='--', linewidth=0.5)
-    plt.legend(loc="upper left", bbox_to_anchor=(1, 1))  # Adjust position
+    plt.legend()
     plt.tight_layout()
-    plt.savefig("avg_error_MUTAG.png")
+    plt.savefig("runtime_ged_PTC_FM.png")
     plt.clf()
-    print("MUTAG - avg error: Done")
+    print("PTC_FM - single GED: Done")
+
+    plt.plot(heights, GEDs_cnt, label="cnt", color="orange")
+    plt.plot(heights, GEDs_bgm, label="bgm", color="blue")
+    plt.xlabel("Height")
+    plt.ylabel("Avg. GED")
+    plt.title("Average of GED calculation: PTC_FM")
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("avg_GED_PTC_FM.png")
+    plt.clf()
+    print("PTC_FM - avg GED: Done")
+
+    # # * Mutag - with baseline, using csv
+    # mutag = main.load_graphs("MUTAG")
+    # matrix_exact = pd.read_csv("mutag_csv/MUTAG_Matrix_exact.csv", header=None).values
+    # matrix_bgm_cnt = pd.read_csv("mutag_csv/MUTAG_Matrix_bgm.csv", header=None).values
+    # matrix_bgm_leon1 = pd.read_csv("mutag_csv/MUTAG_Matrix_bgm_leon1.csv", header=None).values
+    # matrix_bgm_leon2 = pd.read_csv("mutag_csv/MUTAG_Matrix_bgm_leon2.csv", header=None).values
+    # matrix_nx_0 = pd.read_csv("mutag_csv/MUTAG_Matrix_nx_0.csv", header=None).values
+    
+    # errors_cnt = []
+    # errors_cnt_bound = []
+    # errors_bgm_cnt = []
+    # errors_bgm_leon1 = []
+    # errors_bgm_leon2 = []
+    # errors_nx_0 = []
+
+    # for height in heights:
+    #     matrix_cnt = pd.read_csv(f"mutag_csv/MUTAG_Matrix_cnt_{height+1}.csv", header=None).values
+    #     matrix_cnt_bound = pd.read_csv(f"mutag_csv/MUTAG_Matrix_cnt_{height+1}_bound.csv", header=None).values
+    #     error_cnt = 0
+    #     error_cnt_bound = 0
+    #     error_bgm_cnt = 0
+    #     error_bgm_leon1 = 0
+    #     error_bgm_leon2 = 0
+    #     error_nx_0 = 0
+    #     for i in range(len(mutag)):
+    #         for j in range(len(mutag)):
+    #             if i == j:
+    #                 continue
+    #             error_cnt += abs(matrix_exact[i][j] - matrix_cnt[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_cnt[i][j]
+    #             error_cnt_bound += abs(matrix_exact[i][j] - matrix_cnt_bound[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_cnt_bound[i][j]
+    #             error_bgm_cnt += abs(matrix_exact[i][j] - matrix_bgm_cnt[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm_cnt[i][j]
+    #             error_bgm_leon1 += abs(matrix_exact[i][j] - matrix_bgm_leon1[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm_leon1[i][j]
+    #             error_bgm_leon2 += abs(matrix_exact[i][j] - matrix_bgm_leon2[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_bgm_leon2[i][j]
+    #             error_nx_0 += abs(matrix_exact[i][j] - matrix_nx_0[i][j])/matrix_exact[i][j] if matrix_exact[i][j] != 0 else matrix_nx_0[i][j]
+        
+    #     error_cnt /= len(mutag) * len(mutag) - len(mutag)
+    #     error_cnt_bound /= len(mutag) * len(mutag) - len(mutag)
+    #     error_bgm_cnt /= len(mutag) * len(mutag) - len(mutag)
+    #     error_bgm_leon1 /= len(mutag) * len(mutag) - len(mutag)
+    #     error_bgm_leon2 /= len(mutag) * len(mutag) - len(mutag)
+    #     error_nx_0 /= len(mutag) * len(mutag) - len(mutag)
+
+    #     errors_cnt.append(error_cnt)
+    #     errors_cnt_bound.append(error_cnt_bound)
+    #     errors_bgm_cnt.append(error_bgm_cnt)
+    #     errors_bgm_leon1.append(error_bgm_leon1)
+    #     errors_bgm_leon2.append(error_bgm_leon2)
+    #     errors_nx_0.append(error_nx_0)
+
+    # plt.plot(heights, errors_cnt, label="CNT", color="orange")
+    # plt.plot(heights, errors_cnt_bound, label="CNT - as Bound", color="pink")
+    # plt.plot(heights, errors_bgm_cnt, label="BGM - CNT Framework", color="blue")
+    # plt.plot(heights, errors_bgm_leon1, label="BGM - Leon", color="green")
+    # # plt.plot(heights, errors_bgm_leon2, label="BGM", color="red")
+    # plt.plot(heights, errors_nx_0, label="NX - Optimize", color="purple")
+
+    # plt.xlabel("Height")
+    # plt.ylabel("Avg. Error")
+    # plt.title("Average Approximation Error: MUTAG")
+    # plt.grid(True, which='both', linestyle='--', linewidth=0.5)
+    # plt.legend(loc="upper left", bbox_to_anchor=(1, 1))  # Adjust position
+    # plt.tight_layout()
+    # plt.savefig("avg_error_MUTAG.png")
+    # plt.clf()
+    # print("MUTAG - avg error: Done")
 
     # # * PTC_FM - using csv
     # ptc_fm = main.load_graphs("PTC_FM")
@@ -368,7 +370,7 @@ if __name__ == "__main__":
     # geds_nx_0 = []
 
     # for height in heights:
-    #     matrix_cnt = pd.read_csv(f"ptc_fm_csv/PTC_FM_Matrix_cnt_{height}.csv", header=None).values
+    #     matrix_cnt = pd.read_csv(f"ptc_fm_csv/PTC_FM_Matrix_cnt_{height+1}.csv", header=None).values
     #     ged_cnt = 0
     #     ged_bgm_cnt = 0
     #     ged_bgm_leon1 = 0
@@ -395,7 +397,7 @@ if __name__ == "__main__":
 
     # plt.plot(heights, geds_cnt, label="CNT", color="orange")
     # plt.plot(heights, geds_bgm_cnt, label="BGM - CNT Framework", color="blue")
-    # plt.plot(heights, geds_bgm_leon1, label="BGM - Leon", color="green")
+    # # plt.plot(heights, geds_bgm_leon1, label="BGM - Leon", color="green")
     # # plt.plot(heights, geds_nx_0, label="NX - Optimize", color="purple")
     # plt.xlabel("Height")
     # plt.ylabel("Avg. GED")
@@ -420,7 +422,7 @@ if __name__ == "__main__":
     # geds_nx_0 = []
 
     # for height in heights:
-    #     matrix_cnt = pd.read_csv(f"mutag_csv/MUTAG_Matrix_cnt_{height}.csv", header=None).values
+    #     matrix_cnt = pd.read_csv(f"mutag_csv/MUTAG_Matrix_cnt_{height+1}.csv", header=None).values
     #     ged_cnt = 0
     #     ged_bgm_cnt = 0
     #     ged_bgm_leon1 = 0

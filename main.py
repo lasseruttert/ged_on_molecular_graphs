@@ -34,7 +34,7 @@ def cost_relabel_edge(edge_label1, edge_label2):
 
 # ? The following function is our implementation of canonical encoding of a tree, which is used to encode the neighborhood trees in the SDTED calculation
 
-def encode_graph(graph):
+def encode_graph(graph, node = None):
     """
     * encodes a graph via canonical encoding and hashing
 
@@ -58,7 +58,7 @@ def encode_graph(graph):
         # reconstruct the canonical encoding of the node and its children
         return (f"({graph.nodes[node]['label']}" + "".join(children) + ")")
     
-    return hash(canonical_encoding(graph))
+    return canonical_encoding(graph, node) 
 
 
 # ? The following functions build_nt and sdted were implemented based on the given pseudocode in the paper "Approximating the Graph Edit Distance with Compact Neighborhood Representations"
@@ -91,7 +91,7 @@ def build_nt(graph, root, height, k):
     D[root] = 0
     Phi = {} # Phi[v] is the original node of node v
     Phi[root] = root
-    for i in range(1, height):
+    for i in range(1, height + 1):
         F = {} # F[v] is the node in the tree that corresponds to node v
         for v in sorted(tree.nodes):
             if tree.out_degree(v) == 0: # if v is a leaf
@@ -102,19 +102,19 @@ def build_nt(graph, root, height, k):
                         # add the node to the tree if it is not already in the tree
                         if u not in F:
                             c = u
-                            tree.add_node(c, label=graph.nodes[c]["label"], height=i)
+                            tree.add_node(c, label=graph.nodes[u]["label"], height=i)
                             Phi[c] = u
                             F[u] = c
                         # add the edge to the tree 
-                        tree.add_edge(v, F[u], label=graph.edges[v, F[u]]["label"])
+                        tree.add_edge(v, F[u], label=graph.edges[v, u]["label"])
     # add the encoding of the tree to the graph
     tree = tree.to_undirected() # convert the tree to an undirected graph
-    tree.graph["encoding"] = encode_graph(tree)
+    tree.graph["encoding"] = encode_graph(tree, root)
     tree.graph["id"] = graph.graph["id"]
 
     return tree
 
-def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
+def sdted(treee1, treee2, rr1, rr2, subgraph_dict1, subgraph_dict2, cache):
     """
     * calculates the structure and depth preserving tree edit distance (SDTED) between two trees
 
@@ -160,7 +160,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
 
         return tree
 
-    def recursive_sdted(tree1, tree2, depth):
+    def recursive_sdted(tree1, tree2, r1 , r2, depth):
         """
         * calculates the SDTED between two trees recursively
 
@@ -180,28 +180,28 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
             return cache[key] * pow(w, depth)
 
         # n is the maximum number of children of the roots of the two trees
-        children1 = sorted(tree1.neighbors(list(tree1.nodes)[0]))
-        children2 = sorted(tree2.neighbors(list(tree2.nodes)[0]))
+        children1 = sorted(tree1.neighbors(r1))
+        children2 = sorted(tree2.neighbors(r2))
         n = max(len(children1), len(children2))
 
         # add undefined nodes to the trees, if the roots have a different number of children
 
         if len(children1) != len(children2):
-            tree1_padded = pad(tree1.copy(), n)
-            tree2_padded = pad(tree2.copy(), n)
+            tree1_padded = pad(tree1, n)
+            tree2_padded = pad(tree2, n)
         else:
             tree1_padded = tree1
             tree2_padded = tree2
 
-        root1 = list(tree1_padded.nodes())[0] # get the root of the first tree
-        root2 = list(tree2_padded.nodes())[0] # get the root of the second tree
+        root1 = r1
+        root2 = r2
 
         # create the cost matrix as n x n matrix
         cost_matrix = np.zeros((n, n))
 
         # get the children of the roots (ensure that we use a list, which does not change the order of the children)
         children1 = sorted(tree1_padded.neighbors(root1))  
-        children2 = sorted(tree2_padded.neighbors(root2))  
+        children2 = sorted(tree2_padded.neighbors(root2))
 
         # calculate the cost of the children of the roots 
         for i in range(n):
@@ -230,7 +230,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
                             temp_cost = 1 #* pow(w, depth)
                         #// temp_cost = cost_relabel_edge(tree1_padded.edges[root1, child1_ident]["label"], tree2_padded.edges[root2, child2_ident]["label"]) if tree1_padded.edges[root1, child1_ident]["label"] != tree2_padded.edges[root2, child2_ident]["label"] else 0
                             # recursive call on the subgraphs induced by the children of the roots
-                        recursive_cost = recursive_sdted(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident], depth + 1)
+                        recursive_cost = recursive_sdted(subgraph_dict1[child1_ident], subgraph_dict2[child2_ident], child1_ident, child2_ident, depth + 1)
                         # calculate the cost of the recursive call and add the cost of the edge relabeling 
                         cost_matrix[i][j] = (recursive_cost + temp_cost) 
 
@@ -255,7 +255,7 @@ def sdted(treee1, treee2, subgraph_dict1, subgraph_dict2, cache):
         return result * pow(w, depth)
 
     # start the recursive calculation of the SDTED between the two trees 
-    result = recursive_sdted(treee1, treee2, 0)
+    result = recursive_sdted(treee1, treee2, rr1, rr2, 0)
     # add the result to the cache
     cache[(treee1.graph["encoding"], treee2.graph["encoding"])] = result
 
@@ -338,7 +338,7 @@ def create_subgraph(graph, node):
 
     # add the encoding of the subgraph to the graph
     subgraph = subgraph.to_undirected() # convert the subgraph to an undirected graph
-    subgraph.graph["encoding"] = encode_graph(subgraph)
+    subgraph.graph["encoding"] = encode_graph(subgraph, node)
     subgraph.graph["id"] = graph.graph["id"]
 
     return subgraph
@@ -533,7 +533,7 @@ def calculate_GED_cnt(graph1, graph2, nt_dict = None, cache = {}, height=8, k=0)
             nt2_subgraph = nt_dict[(graph2.graph["id"], node2)][1]
 
             # calculate the SDTED between the neighborhood trees of the nodes
-            current_result = sdted(nt1, nt2, nt1_subgraph, nt2_subgraph, cache)
+            current_result = sdted(nt1, nt2, node1,node2,nt1_subgraph, nt2_subgraph, cache)
             cost_matrix[i, j] = current_result
 
     # calculate the Hungarian Algorithm matching

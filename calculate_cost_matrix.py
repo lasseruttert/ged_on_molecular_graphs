@@ -86,7 +86,7 @@ if __name__ == "__main__":
 
     graphs = main.load_graphs("MUTAG", n)
 
-    cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix(graphs, 5, 0)
+    cost_matrix, edit_matrix, matchings = main.calculate_cost_matrix(graphs, 4, 0)
 
 
     # for i in range(n): 
